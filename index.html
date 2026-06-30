@@ -4,64 +4,58 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>業務核心主控台</title>
-    
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3209/3209738.png">
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/3209/3209738.png">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="業務主控台">
-
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/825/825455.png">
     <style>
-        :root { --bg-color: #000000; --card-bg: #1c1c1e; --text-main: #ffffff; --text-sub: #8e8e93; --accent: #0a84ff; --danger: #ff453a; --success: #32d74b; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); padding: 15px; margin: 0; color: var(--text-main); }
-        .card { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); margin-bottom: 16px; }
-        
-        /* 業績概覽區 */
-        .stat-card { background: linear-gradient(135deg, #1c1c1e 0%, #2c2c2e 100%); padding: 20px; border-radius: 20px; margin-bottom: 16px; border: 1px solid #333; text-align: center; }
-        .stat-num { font-size: 32px; font-weight: 800; color: var(--accent); }
-        .stat-lbl { font-size: 12px; color: var(--text-sub); text-transform: uppercase; letter-spacing: 1px; }
-
-        h2 { margin: 0 0 15px 0; color: #fff; font-size: 17px; }
-        select, input, textarea { width: 100%; padding: 14px; border: none; border-radius: 12px; background: #2c2c2e; color: #fff; font-size: 16px; margin-top: 6px; }
-        .action-btn { width: 100%; background: var(--accent); color: white; border: none; padding: 16px; border-radius: 12px; font-size: 16px; font-weight: 700; cursor: pointer; }
-        .select-group { display: flex; gap: 8px; margin-top: 6px; }
-        .radio-btn { flex: 1; padding: 10px; background: #2c2c2e; border-radius: 10px; text-align: center; font-size: 13px; cursor: pointer; }
-        .radio-btn.active { background: var(--accent); color: white; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
-        td { padding: 12px; background: #2c2c2e; border-radius: 10px; }
-        .status-badge { border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
-        .s-not { background: #3d2525; color: var(--danger); }
-        .s-done { background: #1c3327; color: var(--success); }
+        :root { --bg: #000000; --card: #121212; --blue: #007aff; --text: #ffffff; --sub: #8e8e93; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
+        .card { background: var(--card); padding: 20px; border-radius: 20px; margin-bottom: 16px; border: 1px solid #222; }
+        h2 { font-size: 16px; color: var(--blue); margin-top: 0; }
+        .form-group { margin-bottom: 15px; }
+        select, input, textarea { width: 100%; padding: 12px; border-radius: 10px; border: 1px solid #333; background: #1c1c1c; color: var(--text); }
+        .row { display: flex; gap: 10px; margin-bottom: 10px; }
+        .radio-group { display: flex; gap: 5px; margin-top: 5px; }
+        .radio-btn { flex: 1; padding: 10px; background: #1c1c1c; border-radius: 8px; text-align: center; font-size: 12px; border: 1px solid #333; }
+        .radio-btn.active { background: var(--blue); border-color: var(--blue); }
+        .action-btn { width: 100%; padding: 15px; background: var(--blue); border: none; color: white; font-weight: bold; border-radius: 12px; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 10px; }
+        td { padding: 10px; background: #1c1c1c; font-size: 13px; }
+        .status-btn { padding: 5px 10px; border-radius: 15px; border: none; font-size: 11px; background: #222; color: var(--blue); }
     </style>
 </head>
 <body>
 
-<div class="stat-card">
-    <div class="stat-lbl">今日總出貨</div>
-    <div class="stat-num" id="dailyTotal">0</div>
-</div>
-
 <div class="card">
-    <h2>新出貨登記</h2>
+    <div style="text-align:center; margin-bottom:15px;">
+        <div style="color:var(--sub); font-size:12px;">今日總出貨</div>
+        <div id="dailyTotal" style="font-size:24px; font-weight:bold; color:var(--blue);">0 件</div>
+    </div>
     <form id="orderForm">
-        <div style="display: flex; gap: 10px;">
-            <select id="doctor" style="flex:1" required><option value="">醫生</option></select>
-            <select id="product" style="flex:1" required><option value="">產品</option></select>
+        <div class="row">
+            <select id="doctor" required><option value="">選擇醫生</option></select>
+            <select id="product" required><option value="">選擇產品</option></select>
         </div>
-        <div class="select-group" id="sizeGroup">
-            <div class="radio-btn active" data-value="不分">不分</div>
-            <div class="radio-btn" data-value="S">S</div>
-            <div class="radio-btn" data-value="M">M</div>
-            <div class="radio-btn" data-value="L">L</div>
+        <div class="form-group">
+            <label style="font-size:12px; color:var(--sub)">尺寸</label>
+            <div class="radio-group" id="sizeGroup">
+                <div class="radio-btn active" data-v="不分">不分</div><div class="radio-btn" data-v="S">S</div><div class="radio-btn" data-v="M">M</div><div class="radio-btn" data-v="L">L</div>
+            </div>
+            <input type="hidden" id="sz" value="不分">
         </div>
-        <input type="hidden" id="selectedSize" value="不分">
-        <input type="number" id="qty" value="1" min="1" placeholder="數量" required>
-        <button type="submit" id="submitBtn" class="action-btn" style="margin-top: 15px;">確認送出</button>
+        <div class="form-group">
+            <label style="font-size:12px; color:var(--sub)">肢側</label>
+            <div class="radio-group" id="sideGroup">
+                <div class="radio-btn active" data-v="不分">不分</div><div class="radio-btn" data-v="左">左</div><div class="radio-btn" data-v="右">右</div>
+            </div>
+            <input type="hidden" id="sd" value="不分">
+        </div>
+        <input type="number" id="qty" value="1" placeholder="數量">
+        <button type="submit" class="action-btn" style="margin-top:15px;">送出紀錄</button>
     </form>
 </div>
 
 <div class="card">
-    <h2>歷史看板</h2>
-    <input type="text" id="searchInput" oninput="render()" placeholder="🔍 搜尋紀錄...">
+    <h2>歷史紀錄</h2>
+    <input type="text" id="searchInput" oninput="render()" placeholder="🔍 搜尋...">
     <table><tbody id="tbody"></tbody></table>
 </div>
 
@@ -69,14 +63,15 @@
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
     let orders = [];
 
+    // 恢復選擇邏輯
     document.querySelectorAll('.radio-btn').forEach(btn => btn.onclick = function() {
         this.parentElement.querySelectorAll('.radio-btn').forEach(b => b.classList.remove('active'));
         this.classList.add('active');
-        document.getElementById('selectedSize').value = this.dataset.value;
+        document.getElementById(this.parentElement.id === 'sizeGroup' ? 'sz' : 'sd').value = this.dataset.v;
     });
 
     window.onload = () => {
-        fetch(GAS_URL).then(res => res.json()).then(d => {
+        fetch(GAS_URL).then(r => r.json()).then(d => {
             orders = d.orders;
             d.doctors.forEach(v => document.getElementById('doctor').innerHTML += `<option value="${v}">${v}</option>`);
             d.products.forEach(v => document.getElementById('product').innerHTML += `<option value="${v}">${v}</option>`);
@@ -86,30 +81,18 @@
 
     function render() {
         const key = document.getElementById('searchInput').value.toLowerCase();
-        let today = new Date().toISOString().slice(5, 10);
-        let count = 0;
-        
-        document.getElementById('tbody').innerHTML = orders.filter(o => {
-            if(o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key)) {
-                if(o.date.includes(today)) count++;
-                return true;
-            }
-            return false;
-        }).map(o => `
-            <tr>
-                <td><div style="font-size:12px; color:var(--text-sub)">${o.date}</div><div style="font-weight:bold">${o.doctor}</div><div style="font-size:12px">${o.product}</div></td>
-                <td style="text-align:right;"><button class="status-badge ${o.status === '已補貨' ? 's-done' : 's-not'}" onclick="toggle(${o.rowNum})">${o.status}</button></td>
-            </tr>
-        `).join('');
-        document.getElementById('dailyTotal').innerText = count;
+        let today = new Date().toISOString().slice(5, 10), count = 0;
+        document.getElementById('tbody').innerHTML = orders.filter(o => o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key)).map(o => {
+            if(o.date.includes(today)) count++;
+            return `<tr><td><b>${o.doctor}</b><br>${o.product} (${o.note})<br><small style="color:var(--sub)">${o.date}</small></td><td align="right"><button class="status-btn" onclick="toggle(${o.rowNum})">${o.status}</button></td></tr>`;
+        }).join('');
+        document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
     function toggle(row) { fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) }).then(() => location.reload()); }
-
     document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
-        const data = { action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value, note: document.getElementById('selectedSize').value };
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => location.reload());
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value, note: document.getElementById('sz').value + "/" + document.getElementById('sd').value }) }).then(() => location.reload());
     };
 </script>
 </body>
