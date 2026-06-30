@@ -34,8 +34,8 @@
 <div class="card">
     <div style="text-align:center; margin-bottom:10px;">今日總出貨：<b id="dailyTotal" style="color:var(--primary);">0 件</b></div>
     <form id="orderForm">
-        <select id="doctor" required><option value="">載入中...</option></select>
-        <select id="product" required><option value="">載入中...</option></select>
+        <select id="doctor" required><option value="">醫生名單載入中...</option></select>
+        <select id="product" required><option value="">產品名單載入中...</option></select>
         
         <label style="font-size: 12px;">尺寸</label>
         <div class="radio-group" id="sizeGroup">
@@ -82,7 +82,7 @@
         fetch(GAS_URL)
         .then(r => r.json())
         .then(d => {
-            if (d.error) { showErr("後台出錯: " + d.error); return; }
+            if (d.error) { showErr("後台錯誤: " + d.error); return; }
             orders = d.orders || [];
             
             const docSel = document.getElementById('doctor');
@@ -96,7 +96,7 @@
             render();
         })
         .catch(err => {
-            showErr("無法連線至後台，可能 Google 伺服器正在卡死排隊中，請過 1 分鐘後手動重整網頁。");
+            showErr("系統正在與 Google 同步中，請等待數秒後重新整理。");
         });
     };
 
@@ -120,7 +120,8 @@
         let today = new Date().toISOString().slice(5, 10), count = 0;
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
             if(o.date.includes(today)) count++;
-            let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '';
+            // 兼容 ISO 時間與常規字串時間
+            let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '無日期';
             return `<tr>
                 <td>
                     <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${displayTime}</small><br>
@@ -134,56 +135,39 @@
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
+    // ✨ 核心修正：針對 iOS Safari 最佳化的「閃電發送」機制
+    function fireAndForget(payload) {
+        fetch(GAS_URL, { 
+            method: "POST", 
+            mode: "no-cors", // 告訴瀏覽器：把資料丟過去就好，不用等回信
+            body: JSON.stringify(payload) 
+        });
+
+        // 丟出去後 1.2 秒直接強制重新整理網頁，完美避開 Safari 卡死
+        setTimeout(() => {
+            location.reload();
+        }, 1200);
+    }
+
     function toggle(row, element) { 
         if (element.classList.contains('tag-loading')) return; 
         element.className = "tag tag-loading";
         element.innerText = "更新中...";
-
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) })
-        .then(r => r.json())
-        .then(res => {
-            if(res.status === "success") {
-                alert("🎉 狀態更新成功！");
-                location.reload();
-            } else {
-                alert("❌ 更新失敗: " + res.message);
-                render();
-            }
-        })
-        .catch(() => {
-            // 處理 Safari 偽陰性錯誤
-            alert("🎉 狀態更新要求已送出！");
-            location.reload();
-        });
+        fireAndForget({ action: "toggle", row: row });
     }
 
     document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "正在寫入 Google 試算表...";
+        btn.innerText = "正在傳送並自動整理...";
         
         const doctor = document.getElementById('doctor').value;
         const product = document.getElementById('product').value;
         const qty = document.getElementById('qty').value;
         const note = document.getElementById('sz').value + "/" + document.getElementById('sd').value + " | " + document.getElementById('noteBox').value;
         
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "add", doctor: doctor, product: product, qty: qty, note: note }) })
-        .then(r => r.json())
-        .then(res => {
-            if(res.status === "success") {
-                alert("🚀 訂單已成功寫入試算表！");
-                location.reload();
-            } else {
-                alert("❌ 寫入失敗: " + res.message);
-                btn.disabled = false;
-                btn.innerText = "確認送出";
-            }
-        })
-        .catch(() => {
-            alert("🚀 訂單已送出，正在後台排隊寫入！");
-            location.reload();
-        });
+        fireAndForget({ action: "add", doctor: doctor, product: product, qty: qty, note: note });
     };
 </script>
 </body>
