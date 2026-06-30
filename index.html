@@ -45,7 +45,7 @@
         </div>
         <input type="hidden" id="sd" value="不分">
         
-        <label style="font-size: 12px; color:var(--primary); cursor:pointer;" onclick="document.getElementById('noteBox').style.display='block'">＋ 填寫客製備註</label>
+        <label id="noteLabel" style="font-size: 12px; color:var(--primary); cursor:pointer;" onclick="toggleNote()">＋ 填寫客製備註</label>
         <textarea id="noteBox" style="display:none;" placeholder="在此輸入特殊備註..."></textarea>
         
         <input type="number" id="qty" value="1" placeholder="數量">
@@ -83,6 +83,19 @@
         });
     };
 
+    // 新增：控制備註欄位展開與收起的邏輯
+    function toggleNote() {
+        const box = document.getElementById('noteBox');
+        const label = document.getElementById('noteLabel');
+        if (box.style.display === 'none' || box.style.display === '') {
+            box.style.display = 'block';
+            label.innerText = '－ 收起客製備註';
+        } else {
+            box.style.display = 'none';
+            label.innerText = '＋ 填寫客製備註';
+        }
+    }
+
     function setFilter(f, btn) { filter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
 
     function render() {
@@ -91,8 +104,8 @@
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
             if(o.date.includes(today)) count++;
             
-            // 提取時間格式化為 月-日 時:分 (例如：06-30 21:03)
-            let displayTime = o.date ? o.date.replace('T', ' ').slice(5, 16) : '';
+            // 修改點：保留 slice(0, 16) 輸出完整的「年-月-日 時:分」
+            let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '';
             
             return `<tr>
                 <td>
