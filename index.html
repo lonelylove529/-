@@ -6,7 +6,8 @@
     <title>業務核心主控台</title>
     <style>
         :root { --bg-color: #121212; --card-bg: #1e1e1e; --text-main: #ffffff; --text-sub: #a0a0a0; --accent: #0a84ff; --danger: #ff453a; --success: #32d74b; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg-color); padding: 15px; margin: 0; color: var(--text-main); }
+        /* 使用系統級現代字體，閱讀更清晰 */
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: var(--bg-color); padding: 15px; margin: 0; color: var(--text-main); -webkit-font-smoothing: antialiased; }
         .card { background: var(--card-bg); padding: 20px; border-radius: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); margin-bottom: 16px; }
         h2 { margin: 0 0 15px 0; color: #fff; font-size: 18px; border-left: 4px solid var(--accent); padding-left: 10px; }
         .form-group { margin-bottom: 15px; }
@@ -17,8 +18,8 @@
         .select-group { display: flex; gap: 8px; flex-wrap: wrap; }
         .radio-btn { flex: 1; min-width: 50px; padding: 12px; background: #2c2c2e; border-radius: 10px; text-align: center; font-size: 13px; cursor: pointer; transition: 0.2s; }
         .radio-btn.active { background: var(--accent); color: white; }
-        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; font-size: 13px; }
-        td { padding: 12px; background: #2c2c2e; }
+        table { width: 100%; border-collapse: separate; border-spacing: 0 8px; }
+        td { padding: 12px; background: #2c2c2e; vertical-align: top; }
         .status-badge { border: none; padding: 6px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; cursor: pointer; }
         .s-not { background: #3d2525; color: var(--danger); }
         .s-done { background: #1c3327; color: var(--success); }
@@ -98,9 +99,17 @@
         const key = document.getElementById('searchInput').value.toLowerCase();
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => `
             <tr>
-                <td>${o.date.slice(5,10)}<br><small style="color:var(--text-sub)">${o.doctor}</small></td>
-                <td>${o.product}<br><small style="color:var(--text-sub)">${o.note || ''} | ${o.qty}個</small></td>
-                <td><button class="status-badge ${o.status === '已補貨' ? 's-done' : 's-not'}" onclick="toggle(${o.rowNum})">${o.status}</button></td>
+                <td style="font-size:12px;">
+                    <div style="color:var(--text-main); font-weight:bold;">${o.date.split(' ')[0]}</div>
+                    <div style="color:var(--text-sub);">${o.date.split(' ')[1] || ''}</div>
+                </td>
+                <td>
+                    <div style="color:var(--text-main); font-weight:bold;">${o.doctor}</div>
+                    <div style="color:var(--text-sub); font-size:12px;">${o.product} (${o.note || ''})</div>
+                </td>
+                <td style="text-align:right;">
+                    <button class="status-badge ${o.status === '已補貨' ? 's-done' : 's-not'}" onclick="toggle(${o.rowNum})">${o.status}</button>
+                </td>
             </tr>
         `).join('');
     }
