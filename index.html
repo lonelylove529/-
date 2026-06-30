@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(純淨高效版)</title>
+    <title>業務核心主控台(防誤觸優化版)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
@@ -150,10 +150,13 @@
         document.getElementById('orderForm').style.display = 'block';
         document.getElementById('historySection').style.display = 'block';
 
-        // 渲染下拉選單
+        // 渲染下拉選單（加入預設空白值選項）
         const docSelect = document.getElementById('doctor');
         const prodSelect = document.getElementById('product');
-        docSelect.innerHTML = ""; prodSelect.innerHTML = "";
+        
+        docSelect.innerHTML = '<option value="">-- 請選擇醫生 --</option>';
+        prodSelect.innerHTML = '<option value="">-- 請選擇產品 --</option>';
+        
         globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
         globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
 
@@ -189,6 +192,14 @@
     // 處理填單送出
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
+        
+        const doc = document.getElementById('doctor').value;
+        const prod = document.getElementById('product').value;
+        
+        // 強制檢查是否有選取
+        if (!doc) { alert("⚠️ 請選擇醫生姓名！"); return; }
+        if (!prod) { alert("⚠️ 請選擇產品名稱！"); return; }
+
         const btn = document.getElementById('submitBtn');
         btn.disabled = true; btn.innerHTML = "正在傳輸...";
 
@@ -202,8 +213,6 @@
         let prefix = specArr.length > 0 ? `【${specArr.join(' / ')}】` : "";
         const combinedNote = `${prefix}${userNote}`;
 
-        const doc = document.getElementById('doctor').value;
-        const prod = document.getElementById('product').value;
         const qty = document.getElementById('quantity').value;
 
         // 【樂觀UI機制】先插值進去、秒速更新手機畫面
@@ -221,6 +230,9 @@
         sendPost(formData, function() {
             document.getElementById('note').value = "";
             resetRadioButtons();
+            // 送出成功後，選單會自動恢復成空白的「請選擇」狀態
+            document.getElementById('doctor').value = "";
+            document.getElementById('product').value = "";
             btn.disabled = false; btn.innerHTML = "確認送出紀錄";
         });
     });
