@@ -3,45 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(補貨與入帳)</title>
+    <title>業務核心主控台 (補貨/出帳版)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
-        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); max-width: 100%; margin: 0 auto 12px auto; }
-        h2 { margin-top: 0; color: #111; text-align: center; font-size: 17px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; margin-bottom: 10px; }
+        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
+        h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; }
         .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
+        label { font-weight: bold; font-size: 13px; color: #555; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-top: 4px; background: #fafafa; }
+        .action-btn { width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; }
         
-        /* 雙切換按鈕 */
-        .mode-group { display: flex; gap: 6px; margin-bottom: 15px; }
-        .mode-btn { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #eee; }
-        .mode-btn.active { background: #007aff; color: white; }
-
-        .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; font-weight: bold; }
+        /* 狀態標籤 */
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; border: none; }
+        .s-pending { background: #fff3cd; color: #856404; } /* 待入帳 */
+        .s-in { background: #d4edda; color: #155724; }      /* 已入庫 */
+        .s-done { background: #e2e3e5; color: #383d41; }    /* 已結算 */
         
-        .table-container { overflow-x: auto; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 8px 4px; border-bottom: 1px solid #eee; }
-        .tag { padding: 3px 6px; border-radius: 4px; font-size: 10px; }
-        .tag-in { background: #e1f5fe; color: #0288d1; } /* 補貨 */
-        .tag-out { background: #fff3e0; color: #f57c00; } /* 出貨 */
-        .status-btn { padding: 4px 8px; border-radius: 12px; border: none; font-size: 10px; cursor: pointer; }
+        th, td { padding: 10px 5px; border-bottom: 1px solid #eee; }
+        .filter-group { display: flex; gap: 5px; margin-bottom: 10px; }
+        .filter-btn { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: #fff; font-size: 12px; }
+        .filter-btn.active { background: #333; color: white; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>🚀 業務操作面板</h2>
-    <div class="mode-group">
-        <button type="button" class="mode-btn active" id="btnOut" onclick="setMode('out')">出貨(待入帳)</button>
-        <button type="button" class="mode-btn" id="btnIn" onclick="setMode('in')">庫存補貨</button>
-    </div>
-    
-    <form id="mainForm">
-        <div class="form-group" id="docField">
-            <label>醫生姓名</label>
-            <select id="doctor"><option value="無(庫存入庫)">無(庫存入庫)</option></select>
+    <h2>📦 業務登記 (補貨/出帳)</h2>
+    <form id="orderForm">
+        <div class="form-group">
+            <label>醫生 / 補貨</label>
+            <select id="doctor">
+                <option value="【補貨】系統入庫">【✦ 系統入庫 (補貨)】</option>
+            </select>
         </div>
         <div class="form-group">
             <label>產品名稱</label>
@@ -51,58 +46,65 @@
             <label>數量</label>
             <input type="number" id="qty" value="1" min="1" required>
         </div>
-        <button type="submit" class="action-btn" id="submitBtn">確認出貨</button>
+        <button type="submit" class="action-btn">確認送出</button>
     </form>
 </div>
 
 <div class="card">
-    <h2>📊 歷史紀錄</h2>
+    <h2>📊 歷史紀錄看板</h2>
+    <div class="filter-group">
+        <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
+        <button class="filter-btn" onclick="setFilter('待入帳', this)">待入帳</button>
+        <button class="filter-btn" onclick="setFilter('已入庫', this)">補貨紀錄</button>
+    </div>
     <table>
-        <thead><tr><th>時間</th><th>類型</th><th>名稱</th><th>量</th><th>動作</th></tr></thead>
-        <tbody id="historyBody"></tbody>
+        <thead><tr><th>時間</th><th>對象</th><th>產品</th><th>狀態</th></tr></thead>
+        <tbody id="tbody"></tbody>
     </table>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
-    let mode = 'out';
-    let globalData = { logs: [], doctors: [], products: [] };
+    let dataList = [];
+    let currentFilter = 'all';
 
-    window.onload = () => fetch(GAS_URL).then(res => res.json()).then(d => { globalData = d; render(); });
-
-    function setMode(m) {
-        mode = m;
-        document.getElementById('btnOut').className = m === 'out' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('btnIn').className = m === 'in' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('docField').style.display = m === 'out' ? 'block' : 'none';
-        document.getElementById('submitBtn').innerHTML = m === 'out' ? '確認出貨' : '確認補貨';
-    }
+    window.onload = () => {
+        fetch(GAS_URL).then(res => res.json()).then(d => {
+            dataList = d.orders;
+            const doc = document.getElementById('doctor');
+            d.doctors.forEach(v => doc.innerHTML += `<option value="${v}">${v}</option>`);
+            document.getElementById('product').innerHTML = d.products.map(v => `<option value="${v}">${v}</option>`).join('');
+            render();
+        });
+    };
 
     function render() {
-        document.getElementById('doctor').innerHTML = globalData.doctors.map(d => `<option value="${d}">${d}</option>`).join('');
-        document.getElementById('product').innerHTML = globalData.products.map(p => `<option value="${p}">${p}</option>`).join('');
-        
-        document.getElementById('historyBody').innerHTML = globalData.logs.map(l => `
+        document.getElementById('tbody').innerHTML = dataList.filter(o => currentFilter === 'all' || o.status === currentFilter).map(o => `
             <tr>
-                <td>${l.date}</td>
-                <td><span class="tag ${l.type === '出貨' ? 'tag-out' : 'tag-in'}">${l.type}</span></td>
-                <td>${l.name}</td>
-                <td>${l.qty}</td>
-                <td>${l.type === '出貨' ? `<button class="status-btn" onclick="toggle('${l.row}')">${l.status}</button>` : '-'}</td>
+                <td>${o.date.slice(5, 10)}</td>
+                <td>${o.doctor}</td>
+                <td>${o.product}</td>
+                <td><button class="status-badge ${o.status === '待入帳' ? 's-pending' : (o.status === '已入庫' ? 's-in' : 's-done')}" 
+                    onclick="toggleStatus(${o.rowNum})">${o.status}</button></td>
             </tr>
         `).join('');
     }
 
-    document.getElementById('mainForm').onsubmit = (e) => {
+    function setFilter(f, btn) {
+        currentFilter = f;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        render();
+    }
+
+    function toggleStatus(row) {
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) }).then(() => location.reload());
+    }
+
+    document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
-        const data = {
-            action: 'add',
-            type: mode === 'out' ? '出貨' : '入庫',
-            doctor: mode === 'out' ? document.getElementById('doctor').value : '系統入庫',
-            product: document.getElementById('product').value,
-            qty: document.getElementById('qty').value
-        };
-        fetch(GAS_URL, { method: 'POST', body: JSON.stringify(data) }).then(() => location.reload());
+        const data = { action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value };
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => location.reload());
     };
 </script>
 </body>
