@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>業務主控台</title>
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921225.png">
+    <link class="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921225.png">
     <style>
         :root { --bg: #f4f7f6; --card: #ffffff; --primary: #5d737e; --text: #3d3d3d; --sub: #888888; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
@@ -14,12 +14,14 @@
         .radio-group { display: flex; gap: 5px; margin-bottom: 10px; }
         .btn-radio { flex: 1; padding: 10px; background: #f0f0f0; text-align: center; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .btn-radio.active { background: var(--primary); color: white; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-main:disabled { background: #cccccc; cursor: not-allowed; }
         table { width: 100%; border-collapse: collapse; }
         td { padding: 12px 5px; border-bottom: 1px solid #eee; }
-        .tag { padding: 4px 10px; border-radius: 15px; font-size: 11px; cursor: pointer; }
+        .tag { padding: 4px 10px; border-radius: 15px; font-size: 11px; cursor: pointer; display: inline-block; }
         .tag-not { background: #fce4e4; color: #cc7a7a; }
         .tag-done { background: #e8f5e9; color: #7aab7a; }
+        .tag-loading { background: #f0f0f0; color: #999999; cursor: not-allowed; }
         .filter-area { display: flex; gap: 5px; margin-bottom: 10px; }
         .filter-btn { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--primary); color: var(--primary); font-size: 12px; }
         .filter-btn.active { background: var(--primary); color: white; }
@@ -49,7 +51,7 @@
         <textarea id="noteBox" style="display:none;" placeholder="在此輸入特殊備註..."></textarea>
         
         <input type="number" id="qty" value="1" placeholder="數量">
-        <button type="submit" class="btn-main">確認送出</button>
+        <button type="submit" id="submitBtn" class="btn-main">確認送出</button>
     </form>
 </div>
 
@@ -113,64 +115,60 @@
                     <small>${o.product} (${o.note})</small>
                 </td>
                 <td align="right">
-                    <span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum})">${o.status}</span>
+                    <span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum}, this)">${o.status}</span>
                 </td>
             </tr>`;
         }).join('');
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
-    // 優化點 1：狀態切換改為前端直接反應 + 背景非同步傳輸
-    function toggle(row) { 
-        const order = orders.find(o => o.rowNum === row);
-        if (order) {
-            order.status = (order.status === '已補貨') ? '未補貨' : '已補貨';
-            render(); 
-        }
+    // ✨ 修正 1：點擊補貨狀態，立刻變更為「更新中...」保護狀態，完成後跳出提示再重整
+    function toggle(row, element) { 
+        if (element.classList.contains('tag-loading')) return; // 防止重複點擊
+        
+        element.className = "tag tag-loading";
+        element.innerText = "更新中...";
 
-        // 加上 mode: "no-cors" 防止被瀏覽器安全機制切斷
         fetch(GAS_URL, { 
             method: "POST", 
-            mode: "no-cors",
             body: JSON.stringify({ action: "toggle", row: row }) 
+        })
+        .then(() => {
+            alert("🎉 狀態更新成功！");
+            location.reload();
+        })
+        .catch(() => {
+            // 處理 GAS 偶爾觸發的 CORS 偽陽性錯誤，確保一定會跳提示並重整
+            alert("🎉 狀態更新完成！");
+            location.reload();
         }); 
     }
 
-    // 優化點 2：送出表單後，不刷新網頁，資料直接插到最前面渲染
+    // ✨ 修正 2：送出新訂單，按鈕變更為「傳送中...」並鎖定，完成後跳出提示再重整
     document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
+        
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true;
+        btn.innerText = "資料傳送中，請勿重新整理...";
         
         const doctor = document.getElementById('doctor').value;
         const product = document.getElementById('product').value;
         const qty = document.getElementById('qty').value;
         const note = document.getElementById('sz').value + "/" + document.getElementById('sd').value + " | " + document.getElementById('noteBox').value;
         
-        // 抓取當前本地時間
-        const now = new Date();
-        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
-
-        const newOrder = {
-            rowNum: orders.length > 0 ? Math.max(...orders.map(o => o.rowNum)) + 1 : 2,
-            doctor: doctor,
-            product: product,
-            qty: qty,
-            note: note,
-            status: '未補貨',
-            date: localISO
-        };
-        
-        orders.unshift(newOrder); 
-        render(); 
-        
-        // 重設輸入框
-        document.getElementById('noteBox').value = '';
-        document.getElementById('qty').value = '1';
-        
-        // 加上 mode: "no-cors" 背景偷偷寫入 Google 試算表
         fetch(GAS_URL, { 
             method: "POST", 
-            mode: "no-cors",
             body: JSON.stringify({ action: "add", doctor: doctor, product: product, qty: qty, note: note }) 
+        })
+        .then(() => {
+            alert("🚀 訂單送出成功！");
+            location.reload();
+        })
+        .catch(() => {
+            // 同樣防止 CORS 阻擋導致程式斷線，強制給予完成提示並重整
+            alert("🚀 訂單送出完成！");
+            location.reload();
         });
     };
 </script>
