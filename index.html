@@ -4,17 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>業務主控台</title>
-    <link class="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/2921/2921225.png">
     <style>
         :root { --bg: #f4f7f6; --card: #ffffff; --primary: #5d737e; --text: #3d3d3d; --sub: #888888; }
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
         h2 { font-size: 15px; color: var(--primary); margin: 0 0 12px 0; border-left: 4px solid var(--primary); padding-left: 10px; }
-        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; margin-bottom: 10px; box-sizing: border-box; }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; margin-bottom: 10px; box-sizing: border-box; font-size: 16px; }
         .radio-group { display: flex; gap: 5px; margin-bottom: 10px; }
         .btn-radio { flex: 1; padding: 10px; background: #f0f0f0; text-align: center; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .btn-radio.active { background: var(--primary); color: white; }
-        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-main:disabled { background: #cccccc; cursor: not-allowed; }
         table { width: 100%; border-collapse: collapse; }
         td { padding: 12px 5px; border-bottom: 1px solid #eee; }
@@ -25,15 +24,18 @@
         .filter-area { display: flex; gap: 5px; margin-bottom: 10px; }
         .filter-btn { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--primary); color: var(--primary); font-size: 12px; }
         .filter-btn.active { background: var(--primary); color: white; }
+        #errorMsg { color: red; background: #ffebee; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: none; font-size: 13px; }
     </style>
 </head>
 <body>
 
+<div id="errorMsg"></div>
+
 <div class="card">
     <div style="text-align:center; margin-bottom:10px;">今日總出貨：<b id="dailyTotal" style="color:var(--primary);">0 件</b></div>
     <form id="orderForm">
-        <select id="doctor" required><option value="">請選擇醫生</option></select>
-        <select id="product" required><option value="">請選擇產品</option></select>
+        <select id="doctor" required><option value="">載入中...</option></select>
+        <select id="product" required><option value="">載入中...</option></select>
         
         <label style="font-size: 12px;">尺寸</label>
         <div class="radio-group" id="sizeGroup">
@@ -77,24 +79,38 @@
     });
 
     window.onload = () => {
-        fetch(GAS_URL).then(r => r.json()).then(d => {
-            orders = d.orders;
-            d.doctors.forEach(v => document.getElementById('doctor').innerHTML += `<option value="${v}">${v}</option>`);
-            d.products.forEach(v => document.getElementById('product').innerHTML += `<option value="${v}">${v}</option>`);
+        fetch(GAS_URL)
+        .then(r => r.json())
+        .then(d => {
+            if (d.error) { showErr("後台出錯: " + d.error); return; }
+            orders = d.orders || [];
+            
+            const docSel = document.getElementById('doctor');
+            docSel.innerHTML = '<option value="">請選擇醫生</option>';
+            d.doctors.forEach(v => docSel.innerHTML += `<option value="${v}">${v}</option>`);
+            
+            const prodSel = document.getElementById('product');
+            prodSel.innerHTML = '<option value="">請選擇產品</option>';
+            d.products.forEach(v => prodSel.innerHTML += `<option value="${v}">${v}</option>`);
+            
             render();
+        })
+        .catch(err => {
+            showErr("無法連線至後台，可能 Google 伺服器正在卡死排隊中，請過 1 分鐘後手動重整網頁。");
         });
     };
+
+    function showErr(msg) {
+        const box = document.getElementById('errorMsg');
+        box.style.display = "block";
+        box.innerText = msg;
+    }
 
     function toggleNote() {
         const box = document.getElementById('noteBox');
         const label = document.getElementById('noteLabel');
-        if (box.style.display === 'none' || box.style.display === '') {
-            box.style.display = 'block';
-            label.innerText = '－ 收起客製備註';
-        } else {
-            box.style.display = 'none';
-            label.innerText = '＋ 填寫客製備註';
-        }
+        box.style.display = (box.style.display === 'none' || box.style.display === '') ? 'block' : 'none';
+        label.innerText = box.style.display === 'block' ? '－ 收起客製備註' : '＋ 填寫客製備註';
     }
 
     function setFilter(f, btn) { filter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
@@ -107,9 +123,7 @@
             let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '';
             return `<tr>
                 <td>
-                    <b>${o.doctor}</b> 
-                    <small style="color:var(--sub); margin-left:8px;">${displayTime}</small>
-                    <br>
+                    <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${displayTime}</small><br>
                     <small>${o.product} (${o.note})</small>
                 </td>
                 <td align="right">
@@ -120,66 +134,56 @@
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
-    // ✨ 核心改良：建立防卡死的核心發送機制
-    function sendToGAS(payload, successAlert) {
-        let isDone = false;
-
-        // 設定「2.5秒安全閥」：時間一到，不管 Google 回應了沒，直接放行跳提示
-        const safetyTimeout = setTimeout(() => {
-            if (!isDone) {
-                isDone = true;
-                alert(successAlert);
-                location.reload();
-            }
-        }, 2500);
-
-        // 使用 mode: "no-cors" 繞過手機 Safari 的重導向卡死限制
-        fetch(GAS_URL, { 
-            method: "POST", 
-            mode: "no-cors",
-            body: JSON.stringify(payload) 
-        })
-        .then(() => {
-            if (!isDone) {
-                clearTimeout(safetyTimeout);
-                isDone = true;
-                alert(successAlert);
-                location.reload();
-            }
-        })
-        .catch(() => {
-            if (!isDone) {
-                clearTimeout(safetyTimeout);
-                isDone = true;
-                alert(successAlert);
-                location.reload();
-            }
-        });
-    }
-
-    // 狀態更新按鈕
     function toggle(row, element) { 
         if (element.classList.contains('tag-loading')) return; 
         element.className = "tag tag-loading";
         element.innerText = "更新中...";
 
-        sendToGAS({ action: "toggle", row: row }, "🎉 狀態更新成功！");
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) })
+        .then(r => r.json())
+        .then(res => {
+            if(res.status === "success") {
+                alert("🎉 狀態更新成功！");
+                location.reload();
+            } else {
+                alert("❌ 更新失敗: " + res.message);
+                render();
+            }
+        })
+        .catch(() => {
+            // 處理 Safari 偽陰性錯誤
+            alert("🎉 狀態更新要求已送出！");
+            location.reload();
+        });
     }
 
-    // 新增表單送出
     document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
-        
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
-        btn.innerText = "資料傳送中，請勿重新整理...";
+        btn.innerText = "正在寫入 Google 試算表...";
         
         const doctor = document.getElementById('doctor').value;
         const product = document.getElementById('product').value;
         const qty = document.getElementById('qty').value;
         const note = document.getElementById('sz').value + "/" + document.getElementById('sd').value + " | " + document.getElementById('noteBox').value;
         
-        sendToGAS({ action: "add", doctor: doctor, product: product, qty: qty, note: note }, "🚀 訂單已成功寫入後台！");
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "add", doctor: doctor, product: product, qty: qty, note: note }) })
+        .then(r => r.json())
+        .then(res => {
+            if(res.status === "success") {
+                alert("🚀 訂單已成功寫入試算表！");
+                location.reload();
+            } else {
+                alert("❌ 寫入失敗: " + res.message);
+                btn.disabled = false;
+                btn.innerText = "確認送出";
+            }
+        })
+        .catch(() => {
+            alert("🚀 訂單已送出，正在後台排隊寫入！");
+            location.reload();
+        });
     };
 </script>
 </body>
