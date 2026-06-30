@@ -3,109 +3,362 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台 (補貨/出帳版)</title>
+    <title>業務核心主控台(智慧完全體)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
-        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); margin-bottom: 12px; }
-        h2 { margin: 0 0 10px 0; font-size: 16px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; }
+        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); max-width: 100%; margin: 0 auto 12px auto; }
+        h2 { margin-top: 0; color: #111; text-align: center; font-size: 17px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; margin-bottom: 10px; }
         .form-group { margin-bottom: 10px; }
-        label { font-weight: bold; font-size: 13px; color: #555; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; margin-top: 4px; background: #fafafa; }
-        .action-btn { width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 15px; }
+        label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
+        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
         
-        /* 狀態標籤 */
-        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; border: none; }
-        .s-pending { background: #fff3cd; color: #856404; } /* 待入帳 */
-        .s-in { background: #d4edda; color: #155724; }      /* 已入庫 */
-        .s-done { background: #e2e3e5; color: #383d41; }    /* 已結算 */
-        
-        table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        th, td { padding: 10px 5px; border-bottom: 1px solid #eee; }
-        .filter-group { display: flex; gap: 5px; margin-bottom: 10px; }
-        .filter-btn { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 6px; background: #fff; font-size: 12px; }
+        /* 迷你儀表板排版 */
+        .dashboard { display: flex; gap: 8px; margin-bottom: 10px; }
+        .dash-stat { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eaeaea; }
+        .dash-stat .num { font-size: 18px; font-weight: bold; color: #007aff; margin-top: 2px; }
+        .dash-stat .num.alert { color: #ff3b30; }
+
+        /* 快速篩選按鈕與搜尋 */
+        .search-box { margin-bottom: 8px; }
+        .filter-group { display: flex; gap: 4px; margin-bottom: 10px; }
+        .filter-btn { flex: 1; padding: 6px; background: #eee; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .filter-btn.active { background: #333; color: white; }
+
+        /* 選擇大按鈕 */
+        .select-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .radio-btn { flex: 1; min-width: 50px; text-align: center; padding: 10px 5px; background: #eee; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; border: 2px solid transparent; transition: 0.1s; }
+        .radio-btn.active { background: #007aff; color: white; border-color: #0056b3; }
+        
+        /* 送出大按鈕 */
+        .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .action-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+        /* 高速輕量化表格排版 */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; white-space: nowrap; }
+        th { background: #f4f4f4; font-weight: bold; }
+        .td-note { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #666; }
+        
+        /* 狀態切換標籤 */
+        .status-badge { border: none; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
+        .status-not { background: #ffebeb; color: #ff3b30; border: 1px solid #ffbcbc; }
+        .status-done { background: #e6f9ec; color: #34c759; border: 1px solid #a3e7b9; }
+
+        /* 折疊備註 */
+        .toggle-note-lbl { color: #007aff; font-size: 13px; cursor: pointer; font-weight: bold; display: inline-block; margin-bottom: 6px; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>📦 業務登記 (補貨/出帳)</h2>
-    <form id="orderForm">
+    <h2>📦 業務出貨登記系統</h2>
+    <div id="loading" style="text-align: center; color: #888; padding: 10px; font-size: 13px;">正在同步雲端資料庫...</div>
+    
+    <form id="orderForm" style="display: none;">
         <div class="form-group">
-            <label>醫生 / 補貨</label>
-            <select id="doctor">
-                <option value="【補貨】系統入庫">【✦ 系統入庫 (補貨)】</option>
-            </select>
+            <label>醫生姓名</label>
+            <select id="doctor" required></select>
         </div>
+
         <div class="form-group">
             <label>產品名稱</label>
-            <select id="product"></select>
+            <select id="product" required></select>
         </div>
+
+        <div class="form-group">
+            <label>尺寸規格</label>
+            <div class="select-group" id="sizeGroup">
+                <div class="radio-btn active" data-value="不分">不分</div>
+                <div class="radio-btn" data-value="S">S</div>
+                <div class="radio-btn" data-value="M">M</div>
+                <div class="radio-btn" data-value="L">L</div>
+                <div class="radio-btn" data-value="XL">XL</div>
+            </div>
+            <input type="hidden" id="selectedSize" value="不分">
+        </div>
+
+        <div class="form-group">
+            <label>肢側</label>
+            <div class="select-group" id="sideGroup">
+                <div class="radio-btn active" data-value="不分">不分</div>
+                <div class="radio-btn" data-value="左">左</div>
+                <div class="radio-btn" data-value="右">右</div>
+            </div>
+            <input type="hidden" id="selectedSide" value="不分">
+        </div>
+
         <div class="form-group">
             <label>數量</label>
-            <input type="number" id="qty" value="1" min="1" required>
+            <input type="number" id="quantity" value="1" min="1" required>
         </div>
-        <button type="submit" class="action-btn">確認送出</button>
+
+        <div class="form-group">
+            <span class="toggle-note-lbl" onclick="toggleNoteField()">＋ 填寫特殊客製備註</span>
+            <div id="noteContainer" style="display: none;">
+                <textarea id="note" rows="2" placeholder="有特殊客製需求再填寫..."></textarea>
+            </div>
+        </div>
+
+        <button type="submit" id="submitBtn" class="action-btn">確認送出紀錄</button>
     </form>
 </div>
 
-<div class="card">
-    <h2>📊 歷史紀錄看板</h2>
-    <div class="filter-group">
-        <button class="filter-btn active" onclick="setFilter('all', this)">全部</button>
-        <button class="filter-btn" onclick="setFilter('待入帳', this)">待入帳</button>
-        <button class="filter-btn" onclick="setFilter('已入庫', this)">補貨紀錄</button>
+<div class="card" id="historySection" style="display: none;">
+    <h2>📊 歷史出貨即時看板</h2>
+    
+    <div class="dashboard">
+        <div class="dash-stat">
+            <div style="font-size: 11px; color: #666;">本月總出貨</div>
+            <div class="num" id="statTotal">0 件</div>
+        </div>
+        <div class="dash-stat">
+            <div style="font-size: 11px; color: #666;">待補貨單數</div>
+            <div class="num alert" id="statPending">0 單</div>
+        </div>
     </div>
-    <table>
-        <thead><tr><th>時間</th><th>對象</th><th>產品</th><th>狀態</th></tr></thead>
-        <tbody id="tbody"></tbody>
-    </table>
+
+    <div class="search-box">
+        <input type="text" id="searchInput" oninput="filterOrders()" placeholder="🔍 輸入醫生、產品或規格搜尋...">
+    </div>
+    <div class="filter-group">
+        <button type="button" class="filter-btn active" id="f-all" onclick="setFilter('all')">全部</button>
+        <button type="button" class="filter-btn" id="f-not" onclick="setFilter('未補貨')">⚠️ 未補貨</button>
+        <button type="button" class="filter-btn" id="f-done" onclick="setFilter('已補貨')">✅ 已補貨</button>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>醫生</th>
+                    <th>產品</th>
+                    <th>量</th>
+                    <th>規格備註</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
-    let dataList = [];
-    let currentFilter = 'all';
+    let globalData = { orders: [], doctors: [], products: [] };
+    let currentStatusFilter = 'all'; // 全局篩選狀態
 
-    window.onload = () => {
-        fetch(GAS_URL).then(res => res.json()).then(d => {
-            dataList = d.orders;
-            const doc = document.getElementById('doctor');
-            d.doctors.forEach(v => doc.innerHTML += `<option value="${v}">${v}</option>`);
-            document.getElementById('product').innerHTML = d.products.map(v => `<option value="${v}">${v}</option>`).join('');
-            render();
+    // 快捷鍵選取
+    const sizeBtns = document.querySelectorAll('#sizeGroup .radio-btn');
+    sizeBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            sizeBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('selectedSize').value = this.getAttribute('data-value');
         });
-    };
+    });
 
-    function render() {
-        document.getElementById('tbody').innerHTML = dataList.filter(o => currentFilter === 'all' || o.status === currentFilter).map(o => `
-            <tr>
-                <td>${o.date.slice(5, 10)}</td>
-                <td>${o.doctor}</td>
-                <td>${o.product}</td>
-                <td><button class="status-badge ${o.status === '待入帳' ? 's-pending' : (o.status === '已入庫' ? 's-in' : 's-done')}" 
-                    onclick="toggleStatus(${o.rowNum})">${o.status}</button></td>
-            </tr>
-        `).join('');
+    const sideBtns = document.querySelectorAll('#sideGroup .radio-btn');
+    sideBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            sideBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('selectedSide').value = this.getAttribute('data-value');
+        });
+    });
+
+    window.onload = init;
+    
+    function init() {
+        fetch(GAS_URL)
+        .then(res => res.json())
+        .then(data => {
+            globalData = data;
+            renderAll();
+        })
+        .catch(err => {
+            document.getElementById('loading').innerHTML = "❌ 連線失敗，請檢查網路。";
+        });
     }
 
-    function setFilter(f, btn) {
-        currentFilter = f;
+    // 控制備註欄隱藏或展開
+    function toggleNoteField() {
+        const box = document.getElementById('noteContainer');
+        const lbl = document.querySelector('.toggle-note-lbl');
+        if(box.style.display === 'none') {
+            box.style.display = 'block';
+            lbl.innerHTML = "－ 隱藏備註欄";
+        } else {
+            box.style.display = 'none';
+            lbl.innerHTML = "＋ 填寫特殊客製備註";
+            document.getElementById('note').value = "";
+        }
+    }
+
+    function renderAll() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('orderForm').style.display = 'block';
+        document.getElementById('historySection').style.display = 'block';
+
+        // 智慧儀表板計算 (只計算當前月份的數據)
+        const currentMonthStr = (new Date().getMonth() + 1).toString().padStart(2, '0');
+        let totalQtyThisMonth = 0;
+        let pendingCount = 0;
+
+        globalData.orders.forEach(o => {
+            if (o.status === "未補貨") pendingCount++;
+            if (o.date && o.date.startsWith(currentMonthStr)) {
+                totalQtyThisMonth += parseInt(o.qty || 0);
+            }
+        });
+
+        document.getElementById('statTotal').innerHTML = `${totalQtyThisMonth} 件`;
+        document.getElementById('statPending').innerHTML = `${pendingCount} 單`;
+
+        // 渲染下拉選單
+        const docSelect = document.getElementById('doctor');
+        const prodSelect = document.getElementById('product');
+        docSelect.innerHTML = '<option value="">-- 請選擇醫生 --</option>';
+        prodSelect.innerHTML = '<option value="">-- 請選擇產品 --</option>';
+        globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
+        globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
+
+        // 執行表格繪製
+        filterOrders();
+    }
+
+    // 關鍵字 + 狀態雙重動態篩選
+    function setFilter(status) {
+        currentStatusFilter = status;
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        render();
+        if(status === 'all') document.getElementById('f-all').classList.add('active');
+        if(status === '未補貨') document.getElementById('f-not').classList.add('active');
+        if(status === '已補貨') document.getElementById('f-done').classList.add('active');
+        filterOrders();
     }
 
-    function toggleStatus(row) {
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) }).then(() => location.reload());
+    function filterOrders() {
+        const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = "";
+
+        const filtered = globalData.orders.filter(o => {
+            // 1. 狀態篩選
+            if (currentStatusFilter !== 'all' && o.status !== currentStatusFilter) return false;
+            // 2. 關鍵字搜尋
+            if (keyword) {
+                const matchDoc = o.doctor.toLowerCase().includes(keyword);
+                const matchProd = o.product.toLowerCase().includes(keyword);
+                const matchNote = o.note.toLowerCase().includes(keyword);
+                const matchDate = o.date.toLowerCase().includes(keyword);
+                return matchDoc || matchProd || matchNote || matchDate;
+            }
+            return true;
+        });
+
+        if(filtered.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;">查無對應紀錄</td></tr>`;
+            return;
+        }
+
+        filtered.forEach(o => {
+            const isDone = o.status === "已補貨";
+            const btnClass = isDone ? "status-done" : "status-not";
+            const nextStatus = isDone ? "未補貨" : "已補貨";
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${o.date}</td>
+                    <td><strong>${o.doctor}</strong></td>
+                    <td>${o.product}</td>
+                    <td>${o.qty}</td>
+                    <td><div class="td-note" title="${o.note || ''}">${o.note || '-'}</div></td>
+                    <td>
+                        <button type="button" class="status-badge ${btnClass}" onclick="toggleStatus(${o.rowNum}, '${nextStatus}')">
+                            ${o.status}
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
     }
 
-    document.getElementById('orderForm').onsubmit = (e) => {
+    // 處理填單送出
+    document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const data = { action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value };
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => location.reload());
-    };
+        const doc = document.getElementById('doctor').value;
+        const prod = document.getElementById('product').value;
+        if (!doc) return alert("⚠️ 請選擇醫生姓名！");
+        if (!prod) return alert("⚠️ 請選擇產品名稱！");
+
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = true; btn.innerHTML = "正在傳輸...";
+
+        const sz = document.getElementById('selectedSize').value;
+        const sd = document.getElementById('selectedSide').value;
+        const userNote = document.getElementById('note').value.trim();
+        
+        let specArr = [];
+        if (sz !== "不分") specArr.push(sz);
+        if (sd !== "不分") specArr.push(sd);
+        let prefix = specArr.length > 0 ? `【${specArr.join(' / ')}】` : "";
+        const combinedNote = `${prefix}${userNote}`;
+
+        const qty = document.getElementById('quantity').value;
+
+        // 【樂觀UI機制】即時插值更新
+        const now = new Date();
+        const timeStr = (now.getMonth()+1).toString().padStart(2, '0') + "-" + now.getDate().toString().padStart(2, '0') + " " + now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
+        
+        globalData.orders.unshift({
+            rowNum: globalData.orders.length + 2,
+            date: timeStr, product: prod, doctor: doc, qty: qty, note: combinedNote, status: "未補貨"
+        });
+        renderAll();
+
+        const formData = { action: "addOrder", doctor: doc, product: prod, quantity: qty, note: combinedNote };
+
+        sendPost(formData, function() {
+            document.getElementById('note').value = "";
+            // 如果備註欄原本是開著的，送出後自動收起來
+            document.getElementById('noteContainer').style.display = 'none';
+            document.querySelector('.toggle-note-lbl').innerHTML = "＋ 填寫特殊客製備註";
+            resetRadioButtons();
+            document.getElementById('doctor').value = "";
+            document.getElementById('product').value = "";
+            btn.disabled = false; btn.innerHTML = "確認送出紀錄";
+        });
+    });
+
+    function resetRadioButtons() {
+        sizeBtns.forEach(b => b.classList.remove('active'));
+        sideBtns.forEach(b => b.classList.remove('active'));
+        sizeBtns[0].classList.add('active');
+        sideBtns[0].classList.add('active');
+        document.getElementById('selectedSize').value = "不分";
+        document.getElementById('selectedSide').value = "不分";
+    }
+
+    function toggleStatus(rowNum, nextStatus) {
+        const order = globalData.orders.find(o => o.rowNum === rowNum);
+        if(order) { order.status = nextStatus; renderAll(); }
+        const formData = { action: "toggleStatus", rowNum: rowNum, newStatus: nextStatus };
+        sendPost(formData, function(){});
+    }
+
+    function sendPost(data, callback) {
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) })
+        .then(res => res.json())
+        .then(res => {
+            if(res.status === "success") {
+                if(callback) callback();
+                setTimeout(init, 1500); 
+            } else { alert("❌ 雲端同步失敗"); }
+        })
+        .catch(err => { console.error(err); });
+    }
 </script>
 </body>
 </html>
