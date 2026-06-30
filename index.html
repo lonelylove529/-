@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(每週高效對帳版)</title>
+    <title>業務核心主控台(進銷存完整版)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
@@ -13,371 +13,117 @@
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
         select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
         
-        /* 迷你儀表板排版 */
         .dashboard { display: flex; gap: 8px; margin-bottom: 10px; }
         .dash-stat { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eaeaea; }
-        .dash-stat .num { font-size: 18px; font-weight: bold; color: #007aff; margin-top: 2px; }
-        .dash-stat .num.alert { color: #ff3b30; }
-
-        /* 時間分頁切換 */
-        .time-tabs { display: flex; gap: 4px; margin-bottom: 10px; background: #eee; padding: 2px; border-radius: 8px; }
-        .tab-btn { flex: 1; padding: 8px; border: none; background: transparent; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; color: #666; }
-        .tab-btn.active { background: white; color: #111; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-
-        /* 搜尋與快速對帳按鈕 */
-        .search-box { margin-bottom: 8px; }
-        .tool-group { display: flex; gap: 6px; margin-bottom: 10px; }
-        .copy-btn { flex: 1; padding: 8px; background: #34c759; color: white; border: none; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; text-align: center; }
-        .copy-btn:active { background: #28a745; }
-
-        /* 選擇大按鈕 */
-        .select-group { display: flex; gap: 4px; flex-wrap: wrap; }
-        .radio-btn { flex: 1; min-width: 50px; text-align: center; padding: 10px 5px; background: #eee; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; border: 2px solid transparent; transition: 0.1s; }
-        .radio-btn.active { background: #007aff; color: white; border-color: #0056b3; }
+        .dash-stat .num { font-size: 16px; font-weight: bold; color: #333; }
         
-        /* 送出大按鈕 */
+        .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #eee; }
+        .mode-btn.active { background: #007aff; color: white; }
+
         .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .action-btn:disabled { background: #ccc; cursor: not-allowed; }
-
-        /* 表格排版 */
-        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; white-space: nowrap; }
-        th { background: #f4f4f4; font-weight: bold; }
-        .td-note { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #666; }
+        .copy-btn { width: 100%; padding: 8px; background: #34c759; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
         
-        /* 狀態標籤（將「未補貨」改成更直覺的「未入帳」） */
-        .status-badge { border: none; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
-        .status-not { background: #ffebeb; color: #ff3b30; border: 1px solid #ffbcbc; }
-        .status-done { background: #e6f9ec; color: #34c759; border: 1px solid #a3e7b9; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; }
+        th { background: #f4f4f4; font-weight: bold; }
+        .type-tag { font-size: 10px; padding: 2px 4px; border-radius: 4px; background: #ddd; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>📦 業務出貨登記系統</h2>
-    <div id="loading" style="text-align: center; color: #888; padding: 10px; font-size: 13px;">正在同步雲端資料庫...</div>
+    <h2>📋 業務管理系統</h2>
+    <div class="mode-tabs">
+        <button type="button" class="mode-btn active" id="modeOut" onclick="setMode('out')">出貨登記</button>
+        <button type="button" class="mode-btn" id="modeIn" onclick="setMode('in')">庫存入庫</button>
+    </div>
     
-    <form id="orderForm" style="display: none;">
-        <div class="form-group">
+    <form id="mainForm">
+        <div class="form-group" id="docGroup">
             <label>醫生姓名</label>
-            <select id="doctor" required></select>
+            <select id="doctor"></select>
         </div>
-
         <div class="form-group">
             <label>產品名稱</label>
-            <select id="product" required></select>
+            <select id="product"></select>
         </div>
-
-        <div class="form-group">
-            <label>尺寸規格</label>
-            <div class="select-group" id="sizeGroup">
-                <div class="radio-btn active" data-value="不分">不分</div>
-                <div class="radio-btn" data-value="S">S</div>
-                <div class="radio-btn" data-value="M">M</div>
-                <div class="radio-btn" data-value="L">L</div>
-                <div class="radio-btn" data-value="XL">XL</div>
-            </div>
-            <input type="hidden" id="selectedSize" value="不分">
-        </div>
-
-        <div class="form-group">
-            <label>肢側</label>
-            <div class="select-group" id="sideGroup">
-                <div class="radio-btn active" data-value="不分">不分</div>
-                <div class="radio-btn" data-value="左">左</div>
-                <div class="radio-btn" data-value="右">右</div>
-            </div>
-            <input type="hidden" id="selectedSide" value="不分">
-        </div>
-
         <div class="form-group">
             <label>數量</label>
             <input type="number" id="quantity" value="1" min="1" required>
         </div>
-
-        <button type="submit" id="submitBtn" class="action-btn">確認送出紀錄</button>
+        <button type="submit" id="submitBtn" class="action-btn">確認送出</button>
     </form>
 </div>
 
-<div class="card" id="historySection" style="display: none;">
-    <h2>📊 歷史出貨即時看板</h2>
-    
-    <div class="dashboard">
-        <div class="dash-stat">
-            <div style="font-size: 11px; color: #666;">本週出貨總計</div>
-            <div class="num" id="statTotal">0 件</div>
-        </div>
-        <div class="dash-stat">
-            <div style="font-size: 11px; color: #666;">待入帳單數</div>
-            <div class="num alert" id="statPending">0 單</div>
-        </div>
-    </div>
-
-    <div class="time-tabs">
-        <button type="button" class="tab-btn active" id="t-week" onclick="setTimeFilter('week')">本週紀錄</button>
-        <button type="button" class="tab-btn" id="t-month" onclick="setTimeFilter('month')">本月紀錄</button>
-        <button type="button" class="tab-btn" id="t-all" onclick="setTimeFilter('all')">全部紀錄</button>
-    </div>
-
-    <div class="search-box">
-        <input type="text" id="searchInput" oninput="filterOrders()" placeholder="🔍 輸入醫生、產品快速過濾...">
-    </div>
-    <div class="tool-group">
-        <button type="button" class="copy-btn" onclick="copyUnpaidList()">📋 複製「未入帳」清單傳 LINE</button>
-    </div>
-
-    <div class="table-container">
+<div class="card" id="historySection">
+    <h2>📊 歷史紀錄看板</h2>
+    <button type="button" class="copy-btn" onclick="copyData()">📋 複製清單傳 LINE</button>
+    <div style="overflow-x: auto;">
         <table>
-            <thead>
-                <tr>
-                    <th>時間</th>
-                    <th>醫生</th>
-                    <th>產品</th>
-                    <th>量</th>
-                    <th>規格</th>
-                    <th>狀態</th>
-                </tr>
-            </thead>
-            <tbody id="historyTableBody"></tbody>
+            <thead><tr><th>時間</th><th>類型</th><th>名稱</th><th>量</th><th>動作</th></tr></thead>
+            <tbody id="historyBody"></tbody>
         </table>
     </div>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
-    let globalData = { orders: [], doctors: [], products: [] };
-    let currentTimeFilter = 'week'; // 預設進網頁只看「本週」
-
-    // 快捷鍵選取
-    const sizeBtns = document.querySelectorAll('#sizeGroup .radio-btn');
-    sizeBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            sizeBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById('selectedSize').value = this.getAttribute('data-value');
-        });
-    });
-
-    const sideBtns = document.querySelectorAll('#sideGroup .radio-btn');
-    sideBtns.forEach(btn => {
-        btn.addEventListener('click', function() {
-            sideBtns.forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            document.getElementById('selectedSide').value = this.getAttribute('data-value');
-        });
-    });
+    let currentMode = 'out';
+    let globalData = { logs: [], doctors: [], products: [] };
 
     window.onload = init;
-    
     function init() {
-        fetch(GAS_URL)
-        .then(res => res.json())
-        .then(data => {
-            // 後台傳過來的 status 欄位如果寫「未補貨/已補貨」，我們前台體感直接優化顯示為「未入帳/已入帳」
+        fetch(GAS_URL).then(res => res.json()).then(data => {
             globalData = data;
-            renderAll();
-        })
-        .catch(err => {
-            document.getElementById('loading').innerHTML = "❌ 連線失敗，請檢查網路。";
+            render();
         });
     }
 
-    // 判斷日期是否在「本週」之內 (過去7天)
-    function isThisWeek(dateStr) {
-        if (!dateStr) return false;
-        try {
-            const currentYear = new Date().getFullYear();
-            const [month, day] = dateStr.split(' ')[0].split('-');
-            const recordDate = new Date(currentYear, parseInt(month) - 1, parseInt(day));
-            const today = new Date();
-            const oneWeekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-            return recordDate >= oneWeekAgo && recordDate <= today;
-        } catch(e) { return false; }
+    function setMode(mode) {
+        currentMode = mode;
+        document.getElementById('modeOut').className = mode === 'out' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('modeIn').className = mode === 'in' ? 'mode-btn active' : 'mode-btn';
+        document.getElementById('docGroup').style.display = mode === 'out' ? 'block' : 'none';
+        document.getElementById('submitBtn').innerHTML = mode === 'out' ? '確認出貨' : '確認入庫';
     }
 
-    function renderAll() {
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('orderForm').style.display = 'block';
-        document.getElementById('historySection').style.display = 'block';
-
-        // 儀表板計算
-        const currentMonthStr = (new Date().getMonth() + 1).toString().padStart(2, '0');
-        let totalQtyThisWeek = 0;
-        let pendingCount = 0;
-
-        globalData.orders.forEach(o => {
-            const statusLabel = o.status === "已補貨" ? "已入帳" : "未入帳";
-            if (statusLabel === "未入帳") pendingCount++;
-            if (isThisWeek(o.date)) {
-                totalQtyThisWeek += parseInt(o.qty || 0);
-            }
-        });
-
-        document.getElementById('statTotal').innerHTML = `${totalQtyThisWeek} 件`;
-        document.getElementById('statPending').innerHTML = `${pendingCount} 單`;
-
-        // 下拉選單
+    function render() {
         const docSelect = document.getElementById('doctor');
         const prodSelect = document.getElementById('product');
-        docSelect.innerHTML = '<option value="">-- 請選擇醫生 --</option>';
-        prodSelect.innerHTML = '<option value="">-- 請選擇產品 --</option>';
-        globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
-        globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
+        docSelect.innerHTML = globalData.doctors.map(d => `<option value="${d}">${d}</option>`).join('');
+        prodSelect.innerHTML = globalData.products.map(p => `<option value="${p}">${p}</option>`).join('');
 
-        filterOrders();
+        const body = document.getElementById('historyBody');
+        body.innerHTML = globalData.logs.map(l => `
+            <tr>
+                <td>${l.date}</td>
+                <td><span class="type-tag">${l.type}</span></td>
+                <td>${l.name}</td>
+                <td>${l.qty}</td>
+                <td>${l.status || ''}</td>
+            </tr>
+        `).join('');
     }
 
-    function setTimeFilter(filter) {
-        currentTimeFilter = filter;
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(`t-${filter}`).classList.add('active');
-        filterOrders();
-    }
-
-    function filterOrders() {
-        const keyword = document.getElementById('searchInput').value.toLowerCase().trim();
-        const tbody = document.getElementById('historyTableBody');
-        tbody.innerHTML = "";
-
-        const currentMonthStr = (new Date().getMonth() + 1).toString().padStart(2, '0');
-
-        const filtered = globalData.orders.filter(o => {
-            // 1. 時間維度篩選
-            if (currentTimeFilter === 'week' && !isThisWeek(o.date)) return false;
-            if (currentTimeFilter === 'month' && (!o.date || !o.date.startsWith(currentMonthStr))) return false;
-            
-            // 2. 關鍵字篩選
-            if (keyword) {
-                const matchDoc = o.doctor.toLowerCase().includes(keyword);
-                const matchProd = o.product.toLowerCase().includes(keyword);
-                const matchNote = o.note.toLowerCase().includes(keyword);
-                return matchDoc || matchProd || matchNote;
-            }
-            return true;
-        });
-
-        if(filtered.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;">暫無對應紀錄</td></tr>`;
-            return;
-        }
-
-        filtered.forEach(o => {
-            const isDone = o.status === "已補貨";
-            const statusLabel = isDone ? "已入帳" : "未入帳";
-            const btnClass = isDone ? "status-done" : "status-not";
-            const nextStatus = isDone ? "未補貨" : "已補貨";
-            
-            tbody.innerHTML += `
-                <tr>
-                    <td>${o.date}</td>
-                    <td><strong>${o.doctor}</strong></td>
-                    <td>${o.product}</td>
-                    <td>${o.qty}</td>
-                    <td><div class="td-note" title="${o.note || ''}">${o.note || '-'}</div></td>
-                    <td>
-                        <button type="button" class="status-badge ${btnClass}" onclick="toggleStatus(${o.rowNum}, '${nextStatus}')">
-                            ${statusLabel}
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
-    }
-
-    // 一鍵複製未入帳清單至剪貼簿
-    function copyUnpaidList() {
-        const unpaidOrders = globalData.orders.filter(o => o.status !== "已補貨");
-        if (unpaidOrders.length === 0) {
-            alert("🎉 太棒了！目前所有出貨皆已入帳，沒有未入帳項目。");
-            return;
-        }
-
-        let text = `📋 【業務週對帳 - 待入帳清單】\n`;
-        text += `產出時間: ${new Date().toLocaleDateString()}\n`;
-        text += `-----------------------\n`;
-        
-        unpaidOrders.forEach((o, i) => {
-            text += `${i+1}. [${o.date}] ${o.doctor} 醫生 ➡️ ${o.product} x ${o.qty}件 (${o.note || '不分'})\n`;
-        });
-        
-        text += `-----------------------\n`;
-        text += `💡 請核對以上項目，入帳後請於系統內勾選。`;
-
-        navigator.clipboard.writeText(text).then(() => {
-            alert("🚀 待入帳清單已成功複製到剪貼簿！快去 LINE 貼上傳送吧！");
-        }).catch(err => {
-            alert("複製失敗，請手動截圖或再試一次。");
-        });
-    }
-
-    // 處理填單送出
-    document.getElementById('orderForm').addEventListener('submit', function(e) {
+    document.getElementById('mainForm').addEventListener('submit', function(e) {
         e.preventDefault();
-        const doc = document.getElementById('doctor').value;
-        const prod = document.getElementById('product').value;
-        if (!doc) return alert("⚠️ 請選擇醫生姓名！");
-        if (!prod) return alert("⚠️ 請選擇產品名稱！");
-
-        const btn = document.getElementById('submitBtn');
-        btn.disabled = true; btn.innerHTML = "正在傳輸...";
-
-        const sz = document.getElementById('selectedSize').value;
-        const sd = document.getElementById('selectedSide').value;
-        
-        let specArr = [];
-        if (sz !== "不分") specArr.push(sz);
-        if (sd !== "不分") specArr.push(sd);
-        let combinedNote = specArr.length > 0 ? `${specArr.join(' / ')}` : "不分";
-
-        const qty = document.getElementById('quantity').value;
-
-        // 【樂觀UI機制】即時更新
-        const now = new Date();
-        const timeStr = (now.getMonth()+1).toString().padStart(2, '0') + "-" + now.getDate().toString().padStart(2, '0') + " " + now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
-        
-        globalData.orders.unshift({
-            rowNum: globalData.orders.length + 2,
-            date: timeStr, product: prod, doctor: doc, qty: qty, note: combinedNote, status: "未補貨"
-        });
-        renderAll();
-
-        const formData = { action: "addOrder", doctor: doc, product: prod, quantity: qty, note: combinedNote };
-
-        sendPost(formData, function() {
-            resetRadioButtons();
-            document.getElementById('doctor').value = "";
-            document.getElementById('product').value = "";
-            btn.disabled = false; btn.innerHTML = "確認送出紀錄";
+        const data = {
+            action: "addLog",
+            type: currentMode === 'out' ? '出貨' : '入庫',
+            doctor: document.getElementById('doctor').value,
+            product: document.getElementById('product').value,
+            qty: document.getElementById('quantity').value
+        };
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => {
+            alert("成功！");
+            setTimeout(init, 1000);
         });
     });
 
-    function resetRadioButtons() {
-        sizeBtns.forEach(b => b.classList.remove('active'));
-        sideBtns.forEach(b => b.classList.remove('active'));
-        sizeBtns[0].classList.add('active');
-        sideBtns[0].classList.add('active');
-        document.getElementById('selectedSize').value = "不分";
-        document.getElementById('selectedSide').value = "不分";
-    }
-
-    function toggleStatus(rowNum, nextStatus) {
-        const order = globalData.orders.find(o => o.rowNum === rowNum);
-        if(order) { order.status = nextStatus; renderAll(); }
-        const formData = { action: "toggleStatus", rowNum: rowNum, newStatus: nextStatus };
-        sendPost(formData, function(){});
-    }
-
-    function sendPost(data, callback) {
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) })
-        .then(res => res.json())
-        .then(res => {
-            if(res.status === "success") {
-                if(callback) callback();
-                setTimeout(init, 1500); 
-            } else { alert("❌ 雲端同步失敗"); }
-        })
-        .catch(err => { console.error(err); });
+    function copyData() {
+        let text = "【出入庫清單】\n" + globalData.logs.map(l => `${l.date} - ${l.type}: ${l.name} x${l.qty}`).join('\n');
+        navigator.clipboard.writeText(text).then(() => alert("已複製！"));
     }
 </script>
 </body>
