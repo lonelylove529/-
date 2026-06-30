@@ -3,36 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(秒速即時版)</title>
+    <title>業務核心主控台(純淨高效版)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
         .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); max-width: 100%; margin: 0 auto 12px auto; }
         h2 { margin-top: 0; color: #111; text-align: center; font-size: 17px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; margin-bottom: 10px; }
-        h3 { font-size: 13px; margin-top: 10px; color: #555; margin-bottom: 4px; }
         .form-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
         select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
         
+        /* 選擇大按鈕 */
         .select-group { display: flex; gap: 4px; flex-wrap: wrap; }
         .radio-btn { flex: 1; min-width: 50px; text-align: center; padding: 10px 5px; background: #eee; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; border: 2px solid transparent; transition: 0.1s; }
         .radio-btn.active { background: #007aff; color: white; border-color: #0056b3; }
         
+        /* 送出大按鈕 */
         .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
         .action-btn:disabled { background: #ccc; cursor: not-allowed; }
-        
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 13px; }
-        .del-btn { background: #ff3b30; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
-        .inline-form { display: flex; gap: 6px; margin-bottom: 8px; }
-        .inline-form input { flex: 1; padding: 6px; font-size: 13px; }
-        .inline-form button { padding: 6px 12px; background: #34c759; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
 
+        /* 高速輕量化表格排版 */
         .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
         table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
         th, td { padding: 8px 6px; border-bottom: 1px solid #eee; white-space: nowrap; }
         th { background: #f4f4f4; font-weight: bold; }
         .td-note { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #666; }
         
+        /* 狀態切換標籤 */
         .status-badge { border: none; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
         .status-not { background: #ffebeb; color: #ff3b30; border: 1px solid #ffbcbc; }
         .status-done { background: #e6f9ec; color: #34c759; border: 1px solid #a3e7b9; }
@@ -110,28 +107,11 @@
     </div>
 </div>
 
-<div class="card" id="mgmtSection" style="display: none;">
-    <h2>🛠️ 雲端名單管理面板</h2>
-    
-    <h3>👨‍⚕️ 醫生名單管理</h3>
-    <div class="inline-form">
-        <input type="text" id="newDocName" placeholder="輸入新醫生姓名">
-        <button type="button" onclick="addList('Doctor')">新增</button>
-    </div>
-    <div id="doctorMgmtList"></div>
-
-    <h3>🦿 產品名單管理</h3>
-    <div class="inline-form">
-        <input type="text" id="newProdName" placeholder="輸入新產品名稱">
-        <button type="button" onclick="addList('Product')">新增</button>
-    </div>
-    <div id="productMgmtList"></div>
-</div>
-
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
     let globalData = { orders: [], doctors: [], products: [] };
 
+    // 快捷鍵選取
     const sizeBtns = document.querySelectorAll('#sizeGroup .radio-btn');
     sizeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
@@ -168,25 +148,16 @@
     function renderAll() {
         document.getElementById('loading').style.display = 'none';
         document.getElementById('orderForm').style.display = 'block';
-        document.getElementById('mgmtSection').style.display = 'block';
         document.getElementById('historySection').style.display = 'block';
 
+        // 渲染下拉選單
         const docSelect = document.getElementById('doctor');
         const prodSelect = document.getElementById('product');
         docSelect.innerHTML = ""; prodSelect.innerHTML = "";
         globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
         globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
 
-        const docMgmt = document.getElementById('doctorMgmtList');
-        const prodMgmt = document.getElementById('productMgmtList');
-        docMgmt.innerHTML = ""; prodMgmt.innerHTML = "";
-        globalData.doctors.forEach(d => {
-            docMgmt.innerHTML += `<div class="list-item"><span>${d}</span><button type="button" class="del-btn" onclick="deleteItem('Doctor', '${d}')">刪除</button></div>`;
-        });
-        globalData.products.forEach(p => {
-            prodMgmt.innerHTML += `<div class="list-item"><span>${p}</span><button type="button" class="del-btn" onclick="deleteItem('Product', '${p}')">刪除</button></div>`;
-        });
-
+        // 渲染歷史出貨表格
         const tbody = document.getElementById('historyTableBody');
         tbody.innerHTML = "";
         if(!globalData.orders || globalData.orders.length === 0) {
@@ -215,7 +186,7 @@
         });
     }
 
-    // 填單送出
+    // 處理填單送出
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
@@ -235,7 +206,7 @@
         const prod = document.getElementById('product').value;
         const qty = document.getElementById('quantity').value;
 
-        // 【秒速優化：樂觀UI】立即把新紀錄插到表格最上方，不用等重新整理！
+        // 【樂觀UI機制】先插值進去、秒速更新手機畫面
         const now = new Date();
         const timeStr = (now.getMonth()+1).toString().padStart(2, '0') + "-" + now.getDate().toString().padStart(2, '0') + " " + now.getHours().toString().padStart(2, '0') + ":" + now.getMinutes().toString().padStart(2, '0');
         
@@ -243,11 +214,11 @@
             rowNum: globalData.orders.length + 2,
             date: timeStr, product: prod, doctor: doc, qty: qty, note: combinedNote, status: "未補貨"
         });
-        renderAll(); // 瞬間刷出畫面！
+        renderAll();
 
         const formData = { action: "addOrder", doctor: doc, product: prod, quantity: qty, note: combinedNote };
 
-        sendPost(formData, "🎉 出貨紀錄已成功同步！", function() {
+        sendPost(formData, function() {
             document.getElementById('note').value = "";
             resetRadioButtons();
             btn.disabled = false; btn.innerHTML = "確認送出紀錄";
@@ -263,54 +234,24 @@
         document.getElementById('selectedSide').value = "不分";
     }
 
-    // 新增名單（解決不夠即時、按了沒反應的核心）
-    function addList(type) {
-        const input = document.getElementById(`new${type}Name`);
-        const val = input.value.trim();
-        if(!val) return alert("請輸入名稱");
-
-        // 【秒速優化：樂觀UI】不等後台，直接把名字先塞進本地陣列、立刻渲染選單
-        const key = type === 'Doctor' ? 'doctors' : 'products';
-        globalData[key].push(val);
-        renderAll(); // 按鈕點擊的「那一秒」，下面的管理面板和選單就會立刻跑出名字！
-
-        const data = { action: `add${type}`, name: val };
-        input.value = "";
-        
-        // 發送給後台，並延遲 1.5 秒再重新撈取，完美避免 Google 寫入速度慢的問題
-        sendPost(data, "🎉 成功新增雲端名單！", function(){});
-    }
-
-    function deleteItem(type, name) {
-        if(!confirm(`確定要刪除【${name}】嗎？`)) return;
-        
-        // 本地立刻先移除
-        const key = type === 'Doctor' ? 'doctors' : 'products';
-        globalData[key] = globalData[key].filter(item => item !== name);
-        renderAll();
-
-        const data = { action: `delete${type}`, name: name };
-        sendPost(data, "🗑️ 已自雲端移除", function(){});
-    }
-
+    // 點擊變更補貨狀態
     function toggleStatus(rowNum, nextStatus) {
-        // 本地立即更新狀態
         const order = globalData.orders.find(o => o.rowNum === rowNum);
         if(order) { order.status = nextStatus; renderAll(); }
 
         const formData = { action: "toggleStatus", rowNum: rowNum, newStatus: nextStatus };
-        sendPost(formData, `🔄 狀態已變更為【${nextStatus}】`, function(){});
+        sendPost(formData, function(){});
     }
 
-    function sendPost(data, successMsg, callback) {
+    function sendPost(data, callback) {
         fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) })
         .then(res => res.json())
         .then(res => {
             if(res.status === "success") {
                 if(callback) callback();
-                // 核心關鍵：延遲 1.5 秒等 Google 寫入完畢後，再從雲端抓取一次，確保數據百分百同步
+                // 緩衝 1.5 秒等雲端同步完畢後背景重整
                 setTimeout(init, 1500); 
-            } else { alert("❌ 處理失敗"); }
+            } else { alert("❌ 雲端同步失敗"); }
         })
         .catch(err => { console.error(err); });
     }
