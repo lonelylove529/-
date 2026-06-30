@@ -90,7 +90,21 @@
         let today = new Date().toISOString().slice(5, 10), count = 0;
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
             if(o.date.includes(today)) count++;
-            return `<tr><td><b>${o.doctor}</b><br><small>${o.product} (${o.note})</small></td><td align="right"><span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum})">${o.status}</span></td></tr>`;
+            
+            // 提取時間格式化為 月-日 時:分 (例如：06-30 21:03)
+            let displayTime = o.date ? o.date.replace('T', ' ').slice(5, 16) : '';
+            
+            return `<tr>
+                <td>
+                    <b>${o.doctor}</b> 
+                    <small style="color:var(--sub); margin-left:8px;">${displayTime}</small>
+                    <br>
+                    <small>${o.product} (${o.note})</small>
+                </td>
+                <td align="right">
+                    <span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum})">${o.status}</span>
+                </td>
+            </tr>`;
         }).join('');
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
