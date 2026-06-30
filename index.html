@@ -83,7 +83,6 @@
         });
     };
 
-    // 新增：控制備註欄位展開與收起的邏輯
     function toggleNote() {
         const box = document.getElementById('noteBox');
         const label = document.getElementById('noteLabel');
@@ -104,7 +103,6 @@
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
             if(o.date.includes(today)) count++;
             
-            // 修改點：保留 slice(0, 16) 輸出完整的「年-月-日 時:分」
             let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '';
             
             return `<tr>
@@ -122,11 +120,58 @@
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
-    function toggle(row) { fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) }).then(() => location.reload()); }
+    // 優化點 1：狀態切換改為前端直接反應 + 背景非同步傳輸
+    function toggle(row) { 
+        const order = orders.find(o => o.rowNum === row);
+        if (order) {
+            order.status = (order.status === '已補貨') ? '未補貨' : '已補貨';
+            render(); 
+        }
+
+        // 加上 mode: "no-cors" 防止被瀏覽器安全機制切斷
+        fetch(GAS_URL, { 
+            method: "POST", 
+            mode: "no-cors",
+            body: JSON.stringify({ action: "toggle", row: row }) 
+        }); 
+    }
+
+    // 優化點 2：送出表單後，不刷新網頁，資料直接插到最前面渲染
     document.getElementById('orderForm').onsubmit = (e) => {
         e.preventDefault();
+        
+        const doctor = document.getElementById('doctor').value;
+        const product = document.getElementById('product').value;
+        const qty = document.getElementById('qty').value;
         const note = document.getElementById('sz').value + "/" + document.getElementById('sd').value + " | " + document.getElementById('noteBox').value;
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value, note: note }) }).then(() => location.reload());
+        
+        // 抓取當前本地時間
+        const now = new Date();
+        const localISO = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString();
+
+        const newOrder = {
+            rowNum: orders.length > 0 ? Math.max(...orders.map(o => o.rowNum)) + 1 : 2,
+            doctor: doctor,
+            product: product,
+            qty: qty,
+            note: note,
+            status: '未補貨',
+            date: localISO
+        };
+        
+        orders.unshift(newOrder); 
+        render(); 
+        
+        // 重設輸入框
+        document.getElementById('noteBox').value = '';
+        document.getElementById('qty').value = '1';
+        
+        // 加上 mode: "no-cors" 背景偷偷寫入 Google 試算表
+        fetch(GAS_URL, { 
+            method: "POST", 
+            mode: "no-cors",
+            body: JSON.stringify({ action: "add", doctor: doctor, product: product, qty: qty, note: note }) 
+        });
     };
 </script>
 </body>
