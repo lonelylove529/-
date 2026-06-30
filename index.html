@@ -3,128 +3,87 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(進銷存完整版)</title>
+    <title>每週對帳中心</title>
     <style>
-        *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
-        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); max-width: 100%; margin: 0 auto 12px auto; }
-        h2 { margin-top: 0; color: #111; text-align: center; font-size: 17px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; margin-bottom: 10px; }
-        .form-group { margin-bottom: 10px; }
-        label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
-        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
-        
-        .dashboard { display: flex; gap: 8px; margin-bottom: 10px; }
-        .dash-stat { flex: 1; background: #f8f9fa; padding: 10px; border-radius: 8px; text-align: center; border: 1px solid #eaeaea; }
-        .dash-stat .num { font-size: 16px; font-weight: bold; color: #333; }
-        
-        .mode-tabs { display: flex; gap: 4px; margin-bottom: 10px; }
-        .mode-btn { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; background: #eee; }
-        .mode-btn.active { background: #007aff; color: white; }
-
-        .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        .copy-btn { width: 100%; padding: 8px; background: #34c759; color: white; border: none; border-radius: 6px; font-size: 13px; font-weight: bold; cursor: pointer; margin-bottom: 10px; }
-        
-        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
-        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; }
-        th { background: #f4f4f4; font-weight: bold; }
-        .type-tag { font-size: 10px; padding: 2px 4px; border-radius: 4px; background: #ddd; }
+        body { font-family: sans-serif; background: #f0f2f5; padding: 10px; margin: 0; }
+        .card { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        h2 { font-size: 16px; margin: 0 0 10px 0; color: #333; }
+        select, input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 8px; }
+        .btn-send { width: 100%; padding: 12px; background: #007aff; color: white; border: none; border-radius: 8px; font-weight: bold; }
+        .btn-copy { width: 100%; padding: 10px; background: #34c759; color: white; border: none; border-radius: 8px; font-size: 13px; margin-bottom: 10px; }
+        table { width: 100%; font-size: 12px; border-collapse: collapse; }
+        th, td { padding: 8px 4px; border-bottom: 1px solid #eee; text-align: left; }
+        .status { padding: 4px 8px; border-radius: 12px; font-size: 10px; cursor: pointer; }
+        .not-paid { background: #fee; color: #d00; }
+        .paid { background: #efe; color: #080; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>📋 業務管理系統</h2>
-    <div class="mode-tabs">
-        <button type="button" class="mode-btn active" id="modeOut" onclick="setMode('out')">出貨登記</button>
-        <button type="button" class="mode-btn" id="modeIn" onclick="setMode('in')">庫存入庫</button>
-    </div>
-    
-    <form id="mainForm">
-        <div class="form-group" id="docGroup">
-            <label>醫生姓名</label>
-            <select id="doctor"></select>
-        </div>
-        <div class="form-group">
-            <label>產品名稱</label>
-            <select id="product"></select>
-        </div>
-        <div class="form-group">
-            <label>數量</label>
-            <input type="number" id="quantity" value="1" min="1" required>
-        </div>
-        <button type="submit" id="submitBtn" class="action-btn">確認送出</button>
+    <h2>📦 出貨紀錄登記</h2>
+    <form id="form">
+        <select id="doctor" required><option value="">-- 請選擇醫生 --</option></select>
+        <select id="product" required><option value="">-- 請選擇產品 --</option></select>
+        <input type="number" id="qty" value="1" min="1" placeholder="數量">
+        <button type="submit" class="btn-send">確認出貨</button>
     </form>
 </div>
 
-<div class="card" id="historySection">
-    <h2>📊 歷史紀錄看板</h2>
-    <button type="button" class="copy-btn" onclick="copyData()">📋 複製清單傳 LINE</button>
-    <div style="overflow-x: auto;">
-        <table>
-            <thead><tr><th>時間</th><th>類型</th><th>名稱</th><th>量</th><th>動作</th></tr></thead>
-            <tbody id="historyBody"></tbody>
-        </table>
-    </div>
+<div class="card">
+    <h2>📊 本週未對帳清單</h2>
+    <button class="btn-copy" onclick="copyList()">📋 一鍵複製傳 LINE 給助理/公司</button>
+    <table>
+        <thead><tr><th>時間</th><th>醫生</th><th>產品</th><th>狀態</th></tr></thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 </div>
 
 <script>
     const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
-    let currentMode = 'out';
-    let globalData = { logs: [], doctors: [], products: [] };
+    let orders = [];
 
-    window.onload = init;
-    function init() {
+    window.onload = () => {
         fetch(GAS_URL).then(res => res.json()).then(data => {
-            globalData = data;
+            orders = data.orders;
+            const docSel = document.getElementById('doctor');
+            const prodSel = document.getElementById('product');
+            data.doctors.forEach(d => docSel.innerHTML += `<option value="${d}">${d}</option>`);
+            data.products.forEach(p => prodSel.innerHTML += `<option value="${p}">${p}</option>`);
             render();
         });
-    }
-
-    function setMode(mode) {
-        currentMode = mode;
-        document.getElementById('modeOut').className = mode === 'out' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('modeIn').className = mode === 'in' ? 'mode-btn active' : 'mode-btn';
-        document.getElementById('docGroup').style.display = mode === 'out' ? 'block' : 'none';
-        document.getElementById('submitBtn').innerHTML = mode === 'out' ? '確認出貨' : '確認入庫';
-    }
+    };
 
     function render() {
-        const docSelect = document.getElementById('doctor');
-        const prodSelect = document.getElementById('product');
-        docSelect.innerHTML = globalData.doctors.map(d => `<option value="${d}">${d}</option>`).join('');
-        prodSelect.innerHTML = globalData.products.map(p => `<option value="${p}">${p}</option>`).join('');
-
-        const body = document.getElementById('historyBody');
-        body.innerHTML = globalData.logs.map(l => `
+        const tbody = document.getElementById('tableBody');
+        tbody.innerHTML = orders.map(o => `
             <tr>
-                <td>${l.date}</td>
-                <td><span class="type-tag">${l.type}</span></td>
-                <td>${l.name}</td>
-                <td>${l.qty}</td>
-                <td>${l.status || ''}</td>
+                <td>${o.date.split(' ')[0]}</td>
+                <td>${o.doctor}</td>
+                <td>${o.product}</td>
+                <td><span class="status ${o.status === '已入帳' ? 'paid' : 'not-paid'}" onclick="toggleStatus(${o.rowNum})">${o.status}</span></td>
             </tr>
         `).join('');
     }
 
-    document.getElementById('mainForm').addEventListener('submit', function(e) {
-        e.preventDefault();
-        const data = {
-            action: "addLog",
-            type: currentMode === 'out' ? '出貨' : '入庫',
-            doctor: document.getElementById('doctor').value,
-            product: document.getElementById('product').value,
-            qty: document.getElementById('quantity').value
-        };
-        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => {
-            alert("成功！");
-            setTimeout(init, 1000);
+    function toggleStatus(row) {
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify({ action: "toggle", row: row }) }).then(() => {
+            alert("狀態已更新");
+            location.reload();
         });
-    });
+    }
 
-    function copyData() {
-        let text = "【出入庫清單】\n" + globalData.logs.map(l => `${l.date} - ${l.type}: ${l.name} x${l.qty}`).join('\n');
+    function copyList() {
+        const list = orders.filter(o => o.status !== '已入帳');
+        let text = "【本週待入帳清單】\n" + list.map(o => `${o.doctor}: ${o.product} x${o.qty}`).join('\n');
         navigator.clipboard.writeText(text).then(() => alert("已複製！"));
     }
+
+    document.getElementById('form').onsubmit = (e) => {
+        e.preventDefault();
+        const data = { action: "add", doctor: document.getElementById('doctor').value, product: document.getElementById('product').value, qty: document.getElementById('qty').value };
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) }).then(() => location.reload());
+    };
 </script>
 </body>
 </html>
