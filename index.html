@@ -3,23 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>業務出貨助手</title>
+    <title>業務核心主控台(完全體)</title>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f5f5f7; padding: 20px; margin: 0; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); max-width: 500px; margin: 0 auto; }
-        h2 { margin-top: 0; color: #333; text-align: center; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; padding: 15px; margin: 0; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 550px; margin: 0 auto 20px auto; }
+        h2 { margin-top: 0; color: #111; text-align: center; font-size: 20px; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; }
+        h3 { font-size: 16px; margin-top: 15px; color: #555; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 16px; }
-        button { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 16px; cursor: pointer; font-weight: bold; }
+        label { display: block; margin-bottom: 6px; font-weight: bold; color: #444; font-size: 14px; }
+        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; background: #f9f9f9; }
+        
+        /* 肢側按鈕樣式 */
+        .btn-group { display: flex; gap: 8px; }
+        .radio-btn { flex: 1; text-align: center; padding: 12px; background: #f0f0f0; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; border: 2px solid transparent; transition: 0.2s; }
+        .radio-btn.active { background: #007aff; color: white; border-color: #0056b3; }
+        
+        button { width: 100%; background: #007aff; color: white; border: none; padding: 14px; border-radius: 10px; font-size: 16px; cursor: pointer; font-weight: bold; margin-top: 5px; }
         button:disabled { background: #ccc; }
+        
+        /* 名單管理清單 */
+        .list-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 8px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 15px; }
+        .del-btn { background: #ff3b30; color: white; border: none; padding: 4px 10px; border-radius: 6px; font-size: 12px; cursor: pointer; width: auto; margin: 0; }
+        .inline-form { display: flex; gap: 8px; margin-bottom: 15px; }
+        .inline-form input { flex: 1; padding: 8px; font-size: 14px; }
+        .inline-form button { width: auto; padding: 8px 15px; margin: 0; font-size: 14px; background: #34c759; }
+
+        /* 後台表格與補貨按鈕 */
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; }
+        th { background: #f4f4f4; font-weight: bold; }
+        tr:nth-child(even) { background: #fafafa; }
+        
+        /* 狀態標籤按鈕 */
+        .status-btn { border: none; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: bold; cursor: pointer; width: auto; margin: 0; display: inline-block; }
+        .status-not { background: #ffebeb; color: #ff3b30; border: 1px solid #ffbcbc; }
+        .status-done { background: #e6f9ec; color: #34c759; border: 1px solid #a3e7b9; }
     </style>
 </head>
 <body>
 
 <div class="card">
-    <h2>📦 業務出貨紀錄</h2>
-    <div id="loading" style="text-align: center; color: #888;">正在從雲端載入最新醫生與產品名單...</div>
+    <h2>📦 業務出貨登記</h2>
+    <div id="loading" style="text-align: center; color: #888; padding: 20px;">正在同步雲端資料庫...</div>
     
     <form id="orderForm" style="display: none;">
         <div class="form-group">
@@ -33,124 +59,205 @@
         </div>
 
         <div class="form-group">
-            <label>尺寸</label>
-            <select id="size" required>
-                <option value="S">S</option>
-                <option value="M">M</option>
-                <option value="L">L</option>
-                <option value="XL">XL</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>肢側</label>
-            <select id="side" required>
-                <option value="左側">左側</option>
-                <option value="右側">右側</option>
-                <option value="雙側">雙側</option>
-            </select>
-        </div>
-
-        <div class="form-group">
             <label>數量</label>
             <input type="number" id="quantity" value="1" min="1" required>
         </div>
 
         <div class="form-group">
-            <label>備註</label>
-            <textarea id="note" rows="2" placeholder="有其他特殊需求填這裡..."></textarea>
+            <label>肢側</label>
+            <div class="btn-group" id="sideGroup">
+                <div class="radio-btn active" data-value="左">左</div>
+                <div class="radio-btn" data-value="右">右</div>
+            </div>
+            <input type="hidden" id="side" value="左">
+        </div>
+
+        <div class="form-group">
+            <label>備註 (尺寸或其他特殊需求填這裡)</label>
+            <textarea id="note" rows="2" placeholder="例：S 號 / 需加強墊片..."></textarea>
         </div>
 
         <button type="submit" id="submitBtn">確認送出紀錄</button>
     </form>
 </div>
 
+<div class="card" id="mgmtSection" style="display: none;">
+    <h2>🛠️ 雲端名單管理面板</h2>
+    
+    <h3>👨‍⚕️ 醫生名單管理</h3>
+    <div class="inline-form">
+        <input type="text" id="newDocName" placeholder="輸入新醫生姓名">
+        <button onclick="addList('Doctor')">新增</button>
+    </div>
+    <div id="doctorMgmtList"></div>
+
+    <h3>🦿 產品名單管理</h3>
+    <div class="inline-form">
+        <input type="text" id="newProdName" placeholder="輸入新產品名稱">
+        <button onclick="addList('Product')">新增</button>
+    </div>
+    <div id="productMgmtList"></div>
+</div>
+
+<div class="card" id="historySection" style="display: none;">
+    <h2>📊 後台即時看板 (點擊狀態可切換補貨)</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>產品</th>
+                    <th>醫生</th>
+                    <th>量</th>
+                    <th>備註(含肢側)</th>
+                    <th>補貨狀態</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
+</div>
+
 <script>
-    // 🔗 已經幫你綁定好剛剛生成的 Google Apps Script 網址
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbxIw2Lem7iW_sXmkRQ7ZPa19tlFLz8ElHzdztnaafqQMPR9L3p96MiFiJO34f7ObSt3Kw/exec";
+    // 🔗 已經幫你自動綁定最新的 Google Apps Script 網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycbyaWWi76p0Ln3_pHVWLOuZFWN-12PhfsvXVSCgFO1wEkSLhgD1b-0Lwde7DAuN2pixK8g/exec";
+    let globalData = {};
 
-    window.onload = function() {
+    // 處理肢側按鈕點擊切換
+    const sideBtns = document.querySelectorAll('#sideGroup .radio-btn');
+    sideBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            sideBtns.forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+            document.getElementById('side').value = this.getAttribute('data-value');
+        });
+    });
+
+    window.onload = init;
+    
+    function init() {
+        document.getElementById('loading').style.display = 'block';
         fetch(GAS_URL)
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
-            const doctorSelect = document.getElementById('doctor');
-            const productSelect = document.getElementById('product');
-            
-            // 清空預設
-            doctorSelect.innerHTML = "";
-            productSelect.innerHTML = "";
-
-            if(data.doctors.length === 0) {
-                let opt = document.createElement('option');
-                opt.text = "⚠️ 請先去試算表『醫生名單』分頁加人";
-                doctorSelect.appendChild(opt);
-            } else {
-                data.doctors.forEach(doc => {
-                    let opt = document.createElement('option');
-                    opt.value = doc;
-                    opt.innerHTML = doc;
-                    doctorSelect.appendChild(opt);
-                });
-            }
-            
-            if(data.products.length === 0) {
-                let opt = document.createElement('option');
-                opt.text = "⚠️ 請先去試算表『產品名單』分頁加產品";
-                productSelect.appendChild(opt);
-            } else {
-                data.products.forEach(prod => {
-                    let opt = document.createElement('option');
-                    opt.value = prod;
-                    opt.innerHTML = prod;
-                    productSelect.appendChild(opt);
-                });
-            }
-            
-            document.getElementById('loading').style.display = 'none';
-            document.getElementById('orderForm').style.display = 'block';
+            globalData = data;
+            renderAll();
         })
         .catch(err => {
-            document.getElementById('loading').innerHTML = "❌ 載入失敗，請確認試算表分頁名稱是否為『醫生名單』與『產品名單』。";
-            console.error(err);
+            document.getElementById('loading').innerHTML = "❌ 連線失敗，請檢查網路或重新發布 GAS。";
         });
-    };
+    }
 
+    function renderAll() {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('orderForm').style.display = 'block';
+        document.getElementById('mgmtSection').style.display = 'block';
+        document.getElementById('historySection').style.display = 'block';
+
+        // 1. 渲染出貨選單
+        const docSelect = document.getElementById('doctor');
+        const prodSelect = document.getElementById('product');
+        docSelect.innerHTML = ""; prodSelect.innerHTML = "";
+        globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
+        globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
+
+        // 2. 渲染名單管理
+        const docMgmt = document.getElementById('doctorMgmtList');
+        const prodMgmt = document.getElementById('productMgmtList');
+        docMgmt.innerHTML = ""; prodMgmt.innerHTML = "";
+        globalData.doctors.forEach(d => {
+            docMgmt.innerHTML += `<div class="list-item"><span>${d}</span><button class="del-btn" onclick="deleteItem('Doctor', '${d}')">刪除</button></div>`;
+        });
+        globalData.products.forEach(p => {
+            prodMgmt.innerHTML += `<div class="list-item"><span>${p}</span><button class="del-btn" onclick="deleteItem('Product', '${p}')">刪除</button></div>`;
+        });
+
+        // 3. 渲染後台歷史看板
+        const tableBody = document.getElementById('historyTableBody');
+        tableBody.innerHTML = "";
+        globalData.orders.forEach(o => {
+            const isDone = o.status === "已補貨";
+            const btnClass = isDone ? "status-done" : "status-not";
+            const nextStatus = isDone ? "未補貨" : "已補貨";
+            
+            tableBody.innerHTML += `<tr>
+                <td>${o.date}</td>
+                <td><strong>${o.product}</strong></td>
+                <td>${o.doctor}</td>
+                <td>${o.qty}</td>
+                <td><small>${o.note || '-'}</small></td>
+                <td>
+                    <button class="status-btn ${btnClass}" onclick="toggleStatus(${o.rowNum}, '${nextStatus}')">
+                        ${o.status}
+                    </button>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // 出貨表單送出
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
-        btn.disabled = true;
-        btn.innerHTML = "正在寫入雲端試算表...";
+        btn.disabled = true; btn.innerHTML = "正在同步寫入雲端...";
+
+        const selectedSide = document.getElementById('side').value;
+        const userNote = document.getElementById('note').value.trim();
+        
+        // 把【左/右】和【備註】合體
+        const combinedNote = `【${selectedSide}】${userNote}`;
 
         const formData = {
+            action: "addOrder",
             doctor: document.getElementById('doctor').value,
             product: document.getElementById('product').value,
-            size: document.getElementById('size').value,
-            side: document.getElementById('side').value,
             quantity: document.getElementById('quantity').value,
-            note: document.getElementById('note').value
+            note: combinedNote
         };
 
-        fetch(GAS_URL, {
-            method: "POST",
-            body: JSON.stringify(formData)
-        })
+        sendPost(formData, "🎉 出貨登記成功，已自動記錄時間與肢側！");
+        document.getElementById('note').value = ""; // 清空輸入框
+    });
+
+    // 切換補貨狀態功能
+    function toggleStatus(rowNum, nextStatus) {
+        const formData = {
+            action: "toggleStatus",
+            rowNum: rowNum,
+            newStatus: nextStatus
+        };
+        sendPost(formData, `🔄 補貨狀態已變更為【${nextStatus}】！`);
+    }
+
+    // 新增名單
+    function addList(type) {
+        const input = document.getElementById(`new${type}Name`);
+        const val = input.value.trim();
+        if(!val) return alert("請輸入名稱！");
+        const data = { action: `add${type}`, name: val };
+        input.value = "";
+        sendPost(data, "🎉 名單已新增至雲端！");
+    }
+
+    // 刪除名單
+    function deleteItem(type, name) {
+        if(!confirm(`確定要從雲端刪除【${name}】嗎？`)) return;
+        const data = { action: `delete${type}`, name: name };
+        sendPost(data, "🗑️ 已從雲端刪除！");
+    }
+
+    // 通用 POST 傳輸
+    function sendPost(data, successMsg) {
+        fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) })
         .then(res => res.json())
         .then(res => {
             if(res.status === "success") {
-                alert("🎉 寫入成功！試算表已同步更新！");
-                document.getElementById('note').value = "";
-            } else {
-                alert("❌ 寫入失敗，請重試");
-            }
+                alert(successMsg);
+                init(); // 重新刷網頁最新狀態
+            } else { alert("❌ 處理失敗，請重試"); }
         })
-        .catch(err => {
-            alert("❌ 連線錯誤：" + err);
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = "確認送出紀錄";
-        });
-    });
+        .catch(err => alert("❌ 連線錯誤：" + err));
+    }
 </script>
 </body>
 </html>
