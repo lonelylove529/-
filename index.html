@@ -3,39 +3,42 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>業務核心主控台(完全體)</title>
+    <title>業務核心主控台(高速完全體)</title>
     <style>
         *, *::before, *::after { box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
-        .card { background: white; padding: 16px; border-radius: 14px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); max-width: 100%; margin: 0 auto 15px auto; }
-        h2 { margin-top: 0; color: #111; text-align: center; font-size: 18px; border-bottom: 2px solid #f0f2f5; padding-bottom: 8px; margin-bottom: 12px; }
-        h3 { font-size: 14px; margin-top: 12px; color: #555; margin-bottom: 6px; }
-        .form-group { margin-bottom: 12px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #f5f7fa; padding: 10px; margin: 0; color: #333; }
+        .card { background: white; padding: 14px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.05); max-width: 100%; margin: 0 auto 12px auto; }
+        h2 { margin-top: 0; color: #111; text-align: center; font-size: 17px; border-bottom: 2px solid #f0f2f5; padding-bottom: 6px; margin-bottom: 10px; }
+        h3 { font-size: 13px; margin-top: 10px; color: #555; margin-bottom: 4px; }
+        .form-group { margin-bottom: 10px; }
         label { display: block; margin-bottom: 4px; font-weight: bold; color: #444; font-size: 13px; }
-        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; -webkit-appearance: none; }
+        select, input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 15px; background: #fafafa; }
         
-        /* 快捷按鈕組 */
-        .btn-group { display: flex; gap: 6px; }
-        .radio-btn { flex: 1; text-align: center; padding: 10px; background: #eee; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; border: 2px solid transparent; transition: 0.2s; }
+        /* 選擇大按鈕 */
+        .select-group { display: flex; gap: 4px; flex-wrap: wrap; }
+        .radio-btn { flex: 1; min-width: 50px; text-align: center; padding: 10px 5px; background: #eee; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px; border: 2px solid transparent; transition: 0.1s; }
         .radio-btn.active { background: #007aff; color: white; border-color: #0056b3; }
         
-        button { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
-        button:disabled { background: #ccc; }
+        /* 送出大按鈕 */
+        .action-btn { width: 100%; background: #007aff; color: white; border: none; padding: 12px; border-radius: 8px; font-size: 15px; cursor: pointer; font-weight: bold; margin-top: 5px; }
+        .action-btn:disabled { background: #ccc; cursor: not-allowed; }
         
-        /* 名單管理清單 */
-        .list-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 14px; }
-        .del-btn { background: #ff3b30; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; width: auto; margin: 0; }
-        .inline-form { display: flex; gap: 6px; margin-bottom: 10px; }
+        /* 清單管理 */
+        .list-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 6px 10px; border-radius: 6px; margin-bottom: 4px; font-size: 13px; }
+        .del-btn { background: #ff3b30; color: white; border: none; padding: 3px 8px; border-radius: 4px; font-size: 11px; cursor: pointer; }
+        .inline-form { display: flex; gap: 6px; margin-bottom: 8px; }
         .inline-form input { flex: 1; padding: 6px; font-size: 13px; }
-        .inline-form button { width: auto; padding: 6px 12px; margin: 0; font-size: 13px; background: #34c759; }
+        .inline-form button { padding: 6px 12px; background: #34c759; color: white; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; }
 
-        /* 卡片歷史看板 */
-        .order-card { background: #f8f9fa; border: 1px solid #eee; border-radius: 10px; padding: 10px; margin-bottom: 10px; font-size: 13px; position: relative; }
-        .order-header { display: flex; justify-content: space-between; font-weight: bold; margin-bottom: 6px; border-bottom: 1px dashed #ddd; padding-bottom: 4px; }
-        .order-time { color: #888; font-size: 11px; }
-        .order-body { line-height: 1.4; color: #444; }
+        /* 高速輕量化表格排版（手機順暢不卡頓） */
+        .table-container { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; }
+        th, td { padding: 8px 6px; border-bottom: 1px solid #eee; white-space: nowrap; }
+        th { background: #f4f4f4; font-weight: bold; }
+        .td-note { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 11px; color: #666; }
         
-        .status-btn { border: none; padding: 6px 12px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; width: auto; margin-top: 8px; display: inline-block; text-align: center; }
+        /* 狀態切換小標籤 */
+        .status-badge { border: none; padding: 4px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; cursor: pointer; }
         .status-not { background: #ffebeb; color: #ff3b30; border: 1px solid #ffbcbc; }
         .status-done { background: #e6f9ec; color: #34c759; border: 1px solid #a3e7b9; }
     </style>
@@ -44,7 +47,7 @@
 
 <div class="card">
     <h2>📦 業務出貨登記系統</h2>
-    <div id="loading" style="text-align: center; color: #888; padding: 15px; font-size: 14px;">正在同步雲端資料庫...</div>
+    <div id="loading" style="text-align: center; color: #888; padding: 10px; font-size: 13px;">正在同步雲端資料庫...</div>
     
     <form id="orderForm" style="display: none;">
         <div class="form-group">
@@ -58,23 +61,25 @@
         </div>
 
         <div class="form-group">
-            <label>尺寸规格</label>
-            <div class="btn-group" id="sizeGroup">
-                <div class="radio-btn active" data-value="S">S</div>
+            <label>尺寸規格</label>
+            <div class="select-group" id="sizeGroup">
+                <div class="radio-btn active" data-value="不分">不分</div>
+                <div class="radio-btn" data-value="S">S</div>
                 <div class="radio-btn" data-value="M">M</div>
                 <div class="radio-btn" data-value="L">L</div>
                 <div class="radio-btn" data-value="XL">XL</div>
             </div>
-            <input type="hidden" id="size" value="S">
+            <input type="hidden" id="selectedSize" value="不分">
         </div>
 
         <div class="form-group">
             <label>肢側</label>
-            <div class="btn-group" id="sideGroup">
-                <div class="radio-btn active" data-value="左">左</div>
+            <div class="select-group" id="sideGroup">
+                <div class="radio-btn active" data-value="不分">不分</div>
+                <div class="radio-btn" data-value="左">左</div>
                 <div class="radio-btn" data-value="右">右</div>
             </div>
-            <input type="hidden" id="side" value="左">
+            <input type="hidden" id="selectedSide" value="不分">
         </div>
 
         <div class="form-group">
@@ -83,17 +88,31 @@
         </div>
 
         <div class="form-group">
-            <label>備註 (其他特殊需求填這裡)</label>
-            <textarea id="note" rows="2" placeholder="有其他特殊客製需求再填寫..."></textarea>
+            <label>備註 (特殊客製需求填這裡)</label>
+            <textarea id="note" rows="2" placeholder="有尺寸與肢側外的特殊需求再填寫..."></textarea>
         </div>
 
-        <button type="submit" id="submitBtn">確認送出紀錄</button>
+        <button type="submit" id="submitBtn" class="action-btn">確認送出紀錄</button>
     </form>
 </div>
 
 <div class="card" id="historySection" style="display: none;">
-    <h2>📊 歷史出貨即時看板</h2>
-    <div id="historyCardsContainer"></div>
+    <h2>📊 歷史出貨即時看板 (橫滑可看全貌)</h2>
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>時間</th>
+                    <th>醫生</th>
+                    <th>產品</th>
+                    <th>量</th>
+                    <th>規格備註</th>
+                    <th>狀態</th>
+                </tr>
+            </thead>
+            <tbody id="historyTableBody"></tbody>
+        </table>
+    </div>
 </div>
 
 <div class="card" id="mgmtSection" style="display: none;">
@@ -102,39 +121,40 @@
     <h3>👨‍⚕️ 醫生名單管理</h3>
     <div class="inline-form">
         <input type="text" id="newDocName" placeholder="輸入新醫生姓名">
-        <button onclick="addList('Doctor')">新增</button>
+        <button type="button" onclick="addList('Doctor')">新增</button>
     </div>
     <div id="doctorMgmtList"></div>
 
     <h3>🦿 產品名單管理</h3>
     <div class="inline-form">
         <input type="text" id="newProdName" placeholder="輸入新產品名稱">
-        <button onclick="addList('Product')">新增</button>
+        <button type="button" onclick="addList('Product')">新增</button>
     </div>
     <div id="productMgmtList"></div>
 </div>
 
 <script>
-    const GAS_URL = "https://script.google.com/macros/s/AKfycbyaWWi76p0Ln3_pHVWLOuZFWN-12PhfsvXVSCgFO1wEkSLhgD1b-0Lwde7DAuN2pixK8g/exec";
+    // 這裡已自動綁定你最新的部署網址
+    const GAS_URL = "https://script.google.com/macros/s/AKfycby0wPItvfeyTwsUBUOSv0XSvzWore2NOT9w4gaRsNPnoRCVpomOpsA-TQldLT8B_a1Bqw/exec";
     let globalData = {};
 
-    // 尺寸按鈕點擊
+    // 尺寸按鈕點選切換邏輯
     const sizeBtns = document.querySelectorAll('#sizeGroup .radio-btn');
     sizeBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             sizeBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            document.getElementById('size').value = this.getAttribute('data-value');
+            document.getElementById('selectedSize').value = this.getAttribute('data-value');
         });
     });
 
-    // 肢側按鈕點擊
+    // 肢側按鈕點選切換邏輯
     const sideBtns = document.querySelectorAll('#sideGroup .radio-btn');
     sideBtns.forEach(btn => {
         btn.addEventListener('click', function() {
             sideBtns.forEach(b => b.classList.remove('active'));
             this.classList.add('active');
-            document.getElementById('side').value = this.getAttribute('data-value');
+            document.getElementById('selectedSide').value = this.getAttribute('data-value');
         });
     });
 
@@ -149,7 +169,7 @@
             renderAll();
         })
         .catch(err => {
-            document.getElementById('loading').innerHTML = "❌ 連線失敗，請稍後重試。";
+            document.getElementById('loading').innerHTML = "❌ 連線失敗，請檢查後台部署或網路。";
         });
     }
 
@@ -159,29 +179,29 @@
         document.getElementById('mgmtSection').style.display = 'block';
         document.getElementById('historySection').style.display = 'block';
 
-        // 1. 選單
+        // 1. 選單渲染
         const docSelect = document.getElementById('doctor');
         const prodSelect = document.getElementById('product');
         docSelect.innerHTML = ""; prodSelect.innerHTML = "";
         globalData.doctors.forEach(d => docSelect.innerHTML += `<option value="${d}">${d}</option>`);
         globalData.products.forEach(p => prodSelect.innerHTML += `<option value="${p}">${p}</option>`);
 
-        // 2. 名單
+        // 2. 名單管理後台渲染
         const docMgmt = document.getElementById('doctorMgmtList');
         const prodMgmt = document.getElementById('productMgmtList');
         docMgmt.innerHTML = ""; prodMgmt.innerHTML = "";
         globalData.doctors.forEach(d => {
-            docMgmt.innerHTML += `<div class="list-item"><span>${d}</span><button class="del-btn" onclick="deleteItem('Doctor', '${d}')">刪除</button></div>`;
+            docMgmt.innerHTML += `<div class="list-item"><span>${d}</span><button type="button" class="del-btn" onclick="deleteItem('Doctor', '${d}')">刪除</button></div>`;
         });
         globalData.products.forEach(p => {
-            prodMgmt.innerHTML += `<div class="list-item"><span>${p}</span><button class="del-btn" onclick="deleteItem('Product', '${p}')">刪除</button></div>`;
+            prodMgmt.innerHTML += `<div class="list-item"><span>${p}</span><button type="button" class="del-btn" onclick="deleteItem('Product', '${p}')">刪除</button></div>`;
         });
 
-        // 3. 看板
-        const container = document.getElementById('historyCardsContainer');
-        container.innerHTML = "";
+        // 3. 高速橫向滑動表格渲染
+        const tbody = document.getElementById('historyTableBody');
+        tbody.innerHTML = "";
         if(!globalData.orders || globalData.orders.length === 0) {
-            container.innerHTML = `<div style="text-align:center;color:#888;padding:10px;">暫無出貨紀錄</div>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#888;">暫無紀錄</td></tr>`;
             return;
         }
         globalData.orders.forEach(o => {
@@ -189,38 +209,40 @@
             const btnClass = isDone ? "status-done" : "status-not";
             const nextStatus = isDone ? "未補貨" : "已補貨";
             
-            container.innerHTML += `
-                <div class="order-card">
-                    <div class="order-header">
-                        <span>${o.doctor} 醫師</span>
-                        <span class="order-time">${o.date}</span>
-                    </div>
-                    <div class="order-body">
-                        <div><strong>產品：</strong>${o.product} (數量: ${o.qty})</div>
-                        <div><strong>細節：</strong>${o.note || '-'}</div>
-                    </div>
-                    <div style="text-align: right;">
-                        <button class="status-btn ${btnClass}" onclick="toggleStatus(${o.rowNum}, '${nextStatus}')">
-                            ${o.status} 🔄
+            tbody.innerHTML += `
+                <tr>
+                    <td>${o.date}</td>
+                    <td><strong>${o.doctor}</strong></td>
+                    <td>${o.product}</td>
+                    <td>${o.qty}</td>
+                    <td><div class="td-note" title="${o.note || ''}">${o.note || '-'}</div></td>
+                    <td>
+                        <button type="button" class="status-badge ${btnClass}" onclick="toggleStatus(${o.rowNum}, '${nextStatus}')">
+                            ${o.status}
                         </button>
-                    </div>
-                </div>
+                    </td>
+                </tr>
             `;
         });
     }
 
-    // 表單送出
+    // 處理出貨表單送出
     document.getElementById('orderForm').addEventListener('submit', function(e) {
         e.preventDefault();
         const btn = document.getElementById('submitBtn');
-        btn.disabled = true; btn.innerHTML = "正在同步至雲端...";
+        btn.disabled = true; btn.innerHTML = "正在傳輸...";
 
-        const sz = document.getElementById('size').value;
-        const sd = document.getElementById('side').value;
+        const sz = document.getElementById('selectedSize').value;
+        const sd = document.getElementById('selectedSide').value;
         const userNote = document.getElementById('note').value.trim();
         
-        // 規格與備註合併自動塞入
-        const combinedNote = `【${sz} / ${sd}】${userNote}`;
+        // 如果選「不分」，就不會塞進備註文字，保持試算表乾淨
+        let specArr = [];
+        if (sz !== "不分") specArr.push(sz);
+        if (sd !== "不分") specArr.push(sd);
+        
+        let prefix = specArr.length > 0 ? `【${specArr.join(' / ')}】` : "";
+        const combinedNote = `${prefix}${userNote}`;
 
         const formData = {
             action: "addOrder",
@@ -230,13 +252,26 @@
             note: combinedNote
         };
 
-        sendPost(formData, "🎉 出貨紀錄已成功同步！");
-        document.getElementById('note').value = "";
+        sendPost(formData, "🎉 出貨紀錄已成功同步！", function() {
+            document.getElementById('note').value = "";
+            resetRadioButtons();
+            btn.disabled = false; btn.innerHTML = "確認送出紀錄";
+        });
     });
+
+    // 恢復預設按鈕狀態
+    function resetRadioButtons() {
+        sizeBtns.forEach(b => b.classList.remove('active'));
+        sideBtns.forEach(b => b.classList.remove('active'));
+        sizeBtns[0].classList.add('active');
+        sideBtns[0].classList.add('active');
+        document.getElementById('selectedSize').value = "不分";
+        document.getElementById('selectedSide').value = "不分";
+    }
 
     function toggleStatus(rowNum, nextStatus) {
         const formData = { action: "toggleStatus", rowNum: rowNum, newStatus: nextStatus };
-        sendPost(formData, `🔄 狀態已變更為【${nextStatus}】`);
+        sendPost(formData, `🔄 狀態已變更為【${nextStatus}】`, function(){});
     }
 
     function addList(type) {
@@ -245,26 +280,26 @@
         if(!val) return alert("請輸入名稱");
         const data = { action: `add${type}`, name: val };
         input.value = "";
-        sendPost(data, "🎉 已新增名單！");
+        sendPost(data, "🎉 成功新增名單！", function(){});
     }
 
-    // 刪除
     function deleteItem(type, name) {
         if(!confirm(`確定要刪除【${name}】嗎？`)) return;
         const data = { action: `delete${type}`, name: name };
-        sendPost(data, "🗑️ 已成功刪除");
+        sendPost(data, "🗑️ 已自雲端移除", function(){});
     }
 
-    function sendPost(data, successMsg) {
+    function sendPost(data, successMsg, callback) {
         fetch(GAS_URL, { method: "POST", body: JSON.stringify(data) })
         .then(res => res.json())
         .then(res => {
             if(res.status === "success") {
                 alert(successMsg);
+                if(callback) callback();
                 init();
-            } else { alert("❌ 處理失敗"); document.getElementById('submitBtn').disabled = false; }
+            } else { alert("❌ 處理失敗"); if(callback) callback(); }
         })
-        .catch(err => { alert("❌ 連線錯誤"); document.getElementById('submitBtn').disabled = false; });
+        .catch(err => { alert("❌ 連線超時，請重試"); if(callback) callback(); });
     }
 </script>
 </body>
