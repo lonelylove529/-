@@ -96,7 +96,7 @@
             render();
         })
         .catch(err => {
-            showErr("系統正在與 Google 同步中，請等待數秒後重新整理。");
+            showErr("系統同步中，請等待數秒後重新整理。");
         });
     };
 
@@ -117,15 +117,26 @@
 
     function render() {
         const key = document.getElementById('searchInput').value.toLowerCase();
-        let today = new Date().toISOString().slice(5, 10), count = 0;
+        
+        // ✨ 計算今日總量：改用純數字格式核對 (yyyy/MM/dd)
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, '0');
+        const d = String(now.getDate()).padStart(2, '0');
+        const todayStr = `${y}/${m}/${d}`; 
+        
+        let count = 0;
+
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
-            if(o.date.includes(today)) count++;
-            // 兼容 ISO 時間與常規字串時間
-            let displayTime = o.date ? o.date.replace('T', ' ').slice(0, 16) : '無日期';
+            if(o.date && o.date.includes(todayStr)) count++;
+            
+            // ✨ 歷史看板備註升級：只有真正有字的時候，才包上括號，不然就留白
+            let noteHtml = o.note ? ` <small style="color:var(--sub);">(${o.note})</small>` : '';
+            
             return `<tr>
                 <td>
-                    <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${displayTime}</small><br>
-                    <small>${o.product} (${o.note})</small>
+                    <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${o.date || '無日期'}</small><br>
+                    <small>${o.product}</small>${noteHtml}
                 </td>
                 <td align="right">
                     <span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum}, this)">${o.status}</span>
@@ -135,18 +146,13 @@
         document.getElementById('dailyTotal').innerText = count + " 件";
     }
 
-    // ✨ 核心修正：針對 iOS Safari 最佳化的「閃電發送」機制
     function fireAndForget(payload) {
         fetch(GAS_URL, { 
             method: "POST", 
-            mode: "no-cors", // 告訴瀏覽器：把資料丟過去就好，不用等回信
+            mode: "no-cors", 
             body: JSON.stringify(payload) 
         });
-
-        // 丟出去後 1.2 秒直接強制重新整理網頁，完美避開 Safari 卡死
-        setTimeout(() => {
-            location.reload();
-        }, 1200);
+        setTimeout(() => { location.reload(); }, 1200);
     }
 
     function toggle(row, element) { 
@@ -165,7 +171,21 @@
         const doctor = document.getElementById('doctor').value;
         const product = document.getElementById('product').value;
         const qty = document.getElementById('qty').value;
-        const note = document.getElementById('sz').value + "/" + document.getElementById('sd').value + " | " + document.getElementById('noteBox').value;
+        
+        // ✨ 智慧備註過濾邏輯：只有勾選非「不分」或是有打字的內容，才會集結成備註
+        const sz = document.getElementById('sz').value;
+        const sd = document.getElementById('sd').value;
+        const customNote = document.getElementById('noteBox').value.trim();
+        
+        let specParts = [];
+        if (sz !== "不分") specParts.push(sz);
+        if (sd !== "不分") specParts.push(sd);
+        
+        let finalNoteParts = [];
+        if (specParts.length > 0) finalNoteParts.push(specParts.join("/"));
+        if (customNote) finalNoteParts.push(customNote);
+        
+        const note = finalNoteParts.join(" | "); // 如果都是不分且沒留言，這裡就是空字串 ""
         
         fireAndForget({ action: "add", doctor: doctor, product: product, qty: qty, note: note });
     };
