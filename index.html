@@ -9,10 +9,17 @@
         body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 15px; margin: 0; color: var(--text); }
         .card { background: var(--card); padding: 20px; border-radius: 16px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 15px; }
         h2 { font-size: 15px; color: var(--primary); margin: 0 0 12px 0; border-left: 4px solid var(--primary); padding-left: 10px; }
-        select, input, textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; margin-bottom: 10px; box-sizing: border-box; font-size: 16px; }
+        select, textarea { width: 100%; padding: 12px; border: 1px solid #e0e0e0; border-radius: 10px; background: #fafafa; margin-bottom: 10px; box-sizing: border-box; font-size: 16px; }
         .radio-group { display: flex; gap: 5px; margin-bottom: 10px; }
         .btn-radio { flex: 1; padding: 10px; background: #f0f0f0; text-align: center; border-radius: 8px; font-size: 13px; cursor: pointer; }
         .btn-radio.active { background: var(--primary); color: white; }
+        
+        /* 🔢 全新數量加減按鈕樣式 */
+        .stepper { display: flex; align-items: center; border: 1px solid #e0e0e0; border-radius: 10px; overflow: hidden; width: 150px; background: #fafafa; margin-bottom: 15px; margin-top: 5px; }
+        .stepper-btn { width: 45px; height: 42px; background: #eee; border: none; font-size: 20px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; -webkit-user-select: none; user-select: none; }
+        .stepper-btn:active { background: #ddd; }
+        .stepper-input { flex: 1; border: none; background: transparent; text-align: center; font-size: 18px; font-weight: bold; padding: 0; margin: 0; width: 50px; height: 42px; color: var(--text); pointer-events: none; }
+        
         .btn-main { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; font-size: 16px; }
         .btn-main:disabled { background: #cccccc; cursor: not-allowed; }
         table { width: 100%; border-collapse: collapse; }
@@ -25,6 +32,7 @@
         .filter-btn { padding: 6px 12px; border-radius: 20px; border: 1px solid var(--primary); color: var(--primary); font-size: 12px; }
         .filter-btn.active { background: var(--primary); color: white; }
         #errorMsg { color: red; background: #ffebee; padding: 10px; border-radius: 8px; margin-bottom: 10px; display: none; font-size: 13px; }
+        label { font-weight: bold; color: #666; }
     </style>
 </head>
 <body>
@@ -52,7 +60,13 @@
         <label id="noteLabel" style="font-size: 12px; color:var(--primary); cursor:pointer;" onclick="toggleNote()">＋ 填寫客製備註</label>
         <textarea id="noteBox" style="display:none;" placeholder="在此輸入特殊備註..."></textarea>
         
-        <input type="number" id="qty" value="1" placeholder="數量">
+        <label style="font-size: 12px; display:block; margin-top:5px;">數量</label>
+        <div class="stepper">
+            <button type="button" class="stepper-btn" onclick="adjustQty(-1)">－</button>
+            <input type="number" id="qty" value="1" class="stepper-input" readonly>
+            <button type="button" class="stepper-btn" onclick="adjustQty(1)">＋</button>
+        </div>
+        
         <button type="submit" id="submitBtn" class="btn-main">確認送出</button>
     </form>
 </div>
@@ -113,30 +127,67 @@
         label.innerText = box.style.display === 'block' ? '－ 收起客製備註' : '＋ 填寫客製備註';
     }
 
+    // 🔢 處理加減按鈕點擊邏輯
+    function adjustQty(amount) {
+        const qtyInput = document.getElementById('qty');
+        let val = parseInt(qtyInput.value, 10) || 1;
+        val += amount;
+        if (val < 1) val = 1; // 最小為 1 件
+        qtyInput.value = val;
+    }
+
+    // 🕒 核心：完美過濾任何搞怪的日期格式，強制轉成「MM-dd HH:mm」
+    function cleanDate(dateStr) {
+        if (!dateStr) return '無日期';
+        let str = dateStr.toString();
+        const pad = (n) => String(n).padStart(2, '0');
+
+        if (str.includes('GMT') || str.includes('台北') || /[A-Za-z]/.test(str)) {
+            const d = new Date(str);
+            if (!isNaN(d.getTime())) {
+                return `${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+            }
+        }
+        if (str.includes('下午') || str.includes('上午')) {
+            const isPM = str.includes('下午');
+            let parts = str.replace(/[上下]午/, ' ').split(/[\/\s:]+/);
+            if (parts.length >= 5) {
+                let h = parseInt(parts[3], 10);
+                if (isPM && h < 12) h += 12;
+                if (!isPM && h === 12) h = 0;
+                return `${pad(parts[1])}-${pad(parts[2])} ${pad(h)}:${pad(parts[4])}`;
+            }
+        }
+        let m = str.match(/(\d{4})[\/-](\d{1,2})[\/-](\d{1,2})\s+(\d{1,2}):(\d{1,2})/);
+        if (m) {
+            return `${pad(m[2])}-${pad(m[3])} ${pad(m[4])}:${pad(m[5])}`;
+        }
+        return str;
+    }
+
     function setFilter(f, btn) { filter = f; document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); render(); }
 
     function render() {
         const key = document.getElementById('searchInput').value.toLowerCase();
         
-        // ✨ 計算今日總量：改用純數字格式核對 (yyyy/MM/dd)
         const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, '0');
-        const d = String(now.getDate()).padStart(2, '0');
-        const todayStr = `${y}/${m}/${d}`; 
-        
+        const todayMatchStr = `${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`; 
         let count = 0;
 
         document.getElementById('tbody').innerHTML = orders.filter(o => (filter === 'all' || o.status === filter) && (o.doctor.toLowerCase().includes(key) || o.product.toLowerCase().includes(key))).map(o => {
-            if(o.date && o.date.includes(todayStr)) count++;
+            const formattedDate = cleanDate(o.date);
+            if(formattedDate.startsWith(todayMatchStr)) {
+                count += parseInt(o.qty, 10) || 1; // 依實際出貨數量累加
+            }
             
-            // ✨ 歷史看板備註升級：只有真正有字的時候，才包上括號，不然就留白
             let noteHtml = o.note ? ` <small style="color:var(--sub);">(${o.note})</small>` : '';
+            // 如果數量大於 1，就在產品後面標註一下
+            let qtyHtml = o.qty > 1 ? ` <b style="color:var(--primary); margin-left:5px;">x${o.qty}</b>` : '';
             
             return `<tr>
                 <td>
-                    <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${o.date || '無日期'}</small><br>
-                    <small>${o.product}</small>${noteHtml}
+                    <b>${o.doctor}</b> <small style="color:var(--sub); margin-left:8px;">${formattedDate}</small><br>
+                    <small>${o.product}</small>${qtyHtml}${noteHtml}
                 </td>
                 <td align="right">
                     <span class="tag ${o.status === '已補貨' ? 'tag-done' : 'tag-not'}" onclick="toggle(${o.rowNum}, this)">${o.status}</span>
@@ -147,11 +198,7 @@
     }
 
     function fireAndForget(payload) {
-        fetch(GAS_URL, { 
-            method: "POST", 
-            mode: "no-cors", 
-            body: JSON.stringify(payload) 
-        });
+        fetch(GAS_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
         setTimeout(() => { location.reload(); }, 1200);
     }
 
@@ -172,7 +219,6 @@
         const product = document.getElementById('product').value;
         const qty = document.getElementById('qty').value;
         
-        // ✨ 智慧備註過濾邏輯：只有勾選非「不分」或是有打字的內容，才會集結成備註
         const sz = document.getElementById('sz').value;
         const sd = document.getElementById('sd').value;
         const customNote = document.getElementById('noteBox').value.trim();
@@ -185,7 +231,7 @@
         if (specParts.length > 0) finalNoteParts.push(specParts.join("/"));
         if (customNote) finalNoteParts.push(customNote);
         
-        const note = finalNoteParts.join(" | "); // 如果都是不分且沒留言，這裡就是空字串 ""
+        const note = finalNoteParts.join(" | "); 
         
         fireAndForget({ action: "add", doctor: doctor, product: product, qty: qty, note: note });
     };
